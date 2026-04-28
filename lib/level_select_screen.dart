@@ -14,7 +14,7 @@ class LevelSelectScreen extends StatefulWidget {
 
 class _LevelSelectScreenState extends State<LevelSelectScreen> {
   List<int> _unlockedLevels = [1];
-  Map<int, int> _levelStars = {};
+  final Map<int, int> _levelStars = {};
 
   @override
   void initState() {
