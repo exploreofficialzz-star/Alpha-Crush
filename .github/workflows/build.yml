@@ -30,8 +30,9 @@ jobs:
         run: flutter test
 
       - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEY_JKS }}" | base64 --decode > android/app/release.keystore
+        env:
+          KEY_JKS: ${{ secrets.KEY_JKS }}
+        run: echo "$KEY_JKS" | base64 --decode > android/app/release.keystore
 
       - name: Build APK
         run: flutter build apk --release
