@@ -11,8 +11,8 @@ class SoundManager {
 
   bool _soundEnabled = true;
   bool _musicEnabled = true;
-  double _sfxVolume = 0.7;
-  double _musicVolume = 0.4;
+  final double _sfxVolume = 0.7;
+  final double _musicVolume = 0.4;
 
   bool get soundEnabled => _soundEnabled;
   bool get musicEnabled => _musicEnabled;
