@@ -17,43 +17,109 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
   int _unlockedLevel = 1;
   late AnimationController _shimmer;
 
-  // ── Stage definitions ──────────────────────────────────────────
+  // ── 17 Stage definitions ────────────────────────────────────────
   static const _stages = [
     _StageConfig(
-      label: 'SINGLE LETTERS',
-      subtitle: 'Levels 1 – 10',
-      fromId: 1,
-      toId: 10,
-      gradStart: Color(0xFF6A11CB),
-      gradEnd: Color(0xFF2575FC),
+      number: 1, label: 'SINGLE LETTERS', subtitle: 'Levels 1–3',
+      fromId: 1, toId: 3,
+      gradStart: Color(0xFF6A11CB), gradEnd: Color(0xFF2575FC),
       icon: Icons.abc_rounded,
     ),
     _StageConfig(
-      label: '2-LETTER WORDS',
-      subtitle: 'Levels 11 – 20',
-      fromId: 11,
-      toId: 20,
-      gradStart: Color(0xFFFF8F00),
-      gradEnd: Color(0xFFE53935),
+      number: 2, label: '2-LETTER WORDS', subtitle: 'Levels 4–6',
+      fromId: 4, toId: 6,
+      gradStart: Color(0xFF1565C0), gradEnd: Color(0xFF0097A7),
       icon: Icons.short_text_rounded,
     ),
     _StageConfig(
-      label: '3-LETTER WORDS',
-      subtitle: 'Levels 21 – 35',
-      fromId: 21,
-      toId: 35,
-      gradStart: Color(0xFF00897B),
-      gradEnd: Color(0xFF2E7D32),
+      number: 3, label: '3-LETTER WORDS', subtitle: 'Levels 7–9',
+      fromId: 7, toId: 9,
+      gradStart: Color(0xFF00897B), gradEnd: Color(0xFF2E7D32),
       icon: Icons.text_fields_rounded,
     ),
     _StageConfig(
-      label: '4-LETTER WORDS',
-      subtitle: 'Levels 36 – 50',
-      fromId: 36,
-      toId: 50,
-      gradStart: Color(0xFF4A148C),
-      gradEnd: Color(0xFFAD1457),
+      number: 4, label: '4-LETTER WORDS', subtitle: 'Levels 10–12',
+      fromId: 10, toId: 12,
+      gradStart: Color(0xFFFF8F00), gradEnd: Color(0xFFF4511E),
+      icon: Icons.format_size_rounded,
+    ),
+    _StageConfig(
+      number: 5, label: '5-LETTER WORDS', subtitle: 'Levels 13–15',
+      fromId: 13, toId: 15,
+      gradStart: Color(0xFFE53935), gradEnd: Color(0xFFAD1457),
       icon: Icons.title_rounded,
+    ),
+    _StageConfig(
+      number: 6, label: '6-LETTER WORDS', subtitle: 'Levels 16–18',
+      fromId: 16, toId: 18,
+      gradStart: Color(0xFF6A1B9A), gradEnd: Color(0xFF4527A0),
+      icon: Icons.sort_by_alpha_rounded,
+    ),
+    _StageConfig(
+      number: 7, label: '7-LETTER WORDS', subtitle: 'Levels 19–21',
+      fromId: 19, toId: 21,
+      gradStart: Color(0xFF283593), gradEnd: Color(0xFF00838F),
+      icon: Icons.auto_fix_high_rounded,
+    ),
+    _StageConfig(
+      number: 8, label: '8-LETTER WORDS', subtitle: 'Levels 22–24',
+      fromId: 22, toId: 24,
+      gradStart: Color(0xFF558B2F), gradEnd: Color(0xFF827717),
+      icon: Icons.star_half_rounded,
+    ),
+    _StageConfig(
+      number: 9, label: '9-LETTER WORDS', subtitle: 'Levels 25–27',
+      fromId: 25, toId: 27,
+      gradStart: Color(0xFF4E342E), gradEnd: Color(0xFF37474F),
+      icon: Icons.workspace_premium_rounded,
+    ),
+    _StageConfig(
+      number: 10, label: '10-LETTER WORDS', subtitle: 'Levels 28–30',
+      fromId: 28, toId: 30,
+      gradStart: Color(0xFF880E4F), gradEnd: Color(0xFF4A148C),
+      icon: Icons.military_tech_rounded,
+    ),
+    _StageConfig(
+      number: 11, label: 'COMPOUND WORDS', subtitle: 'Levels 31–33',
+      fromId: 31, toId: 33,
+      gradStart: Color(0xFF0277BD), gradEnd: Color(0xFF00695C),
+      icon: Icons.link_rounded,
+    ),
+    _StageConfig(
+      number: 12, label: 'TECH & CODE', subtitle: 'Levels 34–36',
+      fromId: 34, toId: 36,
+      gradStart: Color(0xFF1B5E20), gradEnd: Color(0xFF006064),
+      icon: Icons.code_rounded,
+    ),
+    _StageConfig(
+      number: 13, label: 'SCIENCE TERMS', subtitle: 'Levels 37–39',
+      fromId: 37, toId: 39,
+      gradStart: Color(0xFF0D47A1), gradEnd: Color(0xFF006064),
+      icon: Icons.science_rounded,
+    ),
+    _StageConfig(
+      number: 14, label: 'GEOGRAPHY', subtitle: 'Levels 40–42',
+      fromId: 40, toId: 42,
+      gradStart: Color(0xFF1A237E), gradEnd: Color(0xFF880E4F),
+      icon: Icons.public_rounded,
+    ),
+    _StageConfig(
+      number: 15, label: 'NATURE & ANIMALS', subtitle: 'Levels 43–45',
+      fromId: 43, toId: 45,
+      gradStart: Color(0xFF33691E), gradEnd: Color(0xFF827717),
+      icon: Icons.eco_rounded,
+    ),
+    _StageConfig(
+      number: 16, label: 'BODY & MIND', subtitle: 'Levels 46–48',
+      fromId: 46, toId: 48,
+      gradStart: Color(0xFFC62828), gradEnd: Color(0xFF6A1B9A),
+      icon: Icons.favorite_rounded,
+    ),
+    _StageConfig(
+      number: 17, label: 'GRAND MASTER', subtitle: 'Levels 49–50',
+      fromId: 49, toId: 50,
+      gradStart: Color(0xFFFFD700), gradEnd: Color(0xFFFF8C00),
+      icon: Icons.emoji_events_rounded,
     ),
   ];
 
@@ -92,17 +158,13 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0D0D1A),
-              Color(0xFF1A0533),
-              Color(0xFF0D0D1A),
-            ],
+            colors: [Color(0xFF0D0D1A), Color(0xFF1A0533), Color(0xFF0D0D1A)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // ── Header ──────────────────────────────────────────
+              // ── Header ──
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 12, 16, 4),
                 child: Row(
@@ -113,55 +175,50 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Expanded(
-                      child: Text(
-                        'SELECT LEVEL',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4,
-                        ),
-                      ),
+                      child: Text('SELECT LEVEL',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 4)),
                     ),
-                    // Progress summary
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.white.withOpacity(0.08),
                       ),
-                      child: Text(
-                        '${_unlockedLevel - 1}/50',
-                        style: const TextStyle(
-                            color: Color(0xFFFFD700),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      ),
+                      child: Text('${(_unlockedLevel - 1).clamp(0, 50)}/50',
+                          style: const TextStyle(
+                              color: Color(0xFFFFD700),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),
               ),
 
-              // ── Overall progress bar ─────────────────────────
+              // ── Progress bar ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
                     value: ((_unlockedLevel - 1) / 50).clamp(0.0, 1.0),
                     minHeight: 6,
                     backgroundColor: Colors.white.withOpacity(0.08),
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFFFFD700)),
+                    valueColor:
+                        const AlwaysStoppedAnimation(Color(0xFFFFD700)),
                   ),
                 ),
               ),
 
-              // ── Stage scroll ─────────────────────────────────
+              // ── Stage list ──
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _stages.length,
                   itemBuilder: (_, i) {
                     final stage = _stages[i];
@@ -169,11 +226,11 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
                         .where((l) =>
                             l.id >= stage.fromId && l.id <= stage.toId)
                         .toList();
-                    final stageUnlocked = _unlockedLevel >= stage.fromId;
-                    final stageComplete = _unlockedLevel > stage.toId;
-                    final stageStars = levels.fold<int>(
-                        0, (sum, l) => sum + (_levelStars[l.id] ?? 0));
-                    final maxStars = levels.length * 3;
+                    final isUnlocked = _unlockedLevel >= stage.fromId;
+                    final isComplete = _unlockedLevel > stage.toId;
+                    final earned = levels.fold<int>(
+                        0, (s, l) => s + (_levelStars[l.id] ?? 0));
+                    final maxPossible = levels.length * 3;
 
                     return _StageSection(
                       config: stage,
@@ -181,17 +238,16 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
                       stars: _levelStars,
                       unlockedLevel: _unlockedLevel,
                       shimmer: _shimmer,
-                      isStageUnlocked: stageUnlocked,
-                      isStageComplete: stageComplete,
-                      stageStars: stageStars,
-                      maxStars: maxStars,
+                      isUnlocked: isUnlocked,
+                      isComplete: isComplete,
+                      earnedStars: earned,
+                      maxStars: maxPossible,
                       onTap: _onLevelTap,
                     );
                   },
                 ),
               ),
 
-              // ── Banner ad ────────────────────────────────────
               const BannerAdWidget(),
               const SizedBox(height: 6),
             ],
@@ -201,13 +257,11 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
     );
   }
 
-  // ── Tap handler ──────────────────────────────────────────────
   void _onLevelTap(Level level) {
     if (level.id > _unlockedLevel) return;
-    // Interstitial every 3rd level tap
     if (level.id % 3 == 0) {
-      AdsManager().showInterstitial(
-          onDismissed: () => _goToGame(level));
+      AdsManager()
+          .showInterstitial(onDismissed: () => _goToGame(level));
     } else {
       _goToGame(level);
     }
@@ -231,8 +285,9 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
   }
 }
 
-// ── Stage config ─────────────────────────────────────────────────
+// ─── Stage config data class ──────────────────────────────────────
 class _StageConfig {
+  final int number;
   final String label;
   final String subtitle;
   final int fromId;
@@ -242,6 +297,7 @@ class _StageConfig {
   final IconData icon;
 
   const _StageConfig({
+    required this.number,
     required this.label,
     required this.subtitle,
     required this.fromId,
@@ -252,16 +308,16 @@ class _StageConfig {
   });
 }
 
-// ── Stage section ─────────────────────────────────────────────────
+// ─── Stage section widget ─────────────────────────────────────────
 class _StageSection extends StatelessWidget {
   final _StageConfig config;
   final List<Level> levels;
   final Map<int, int> stars;
   final int unlockedLevel;
   final AnimationController shimmer;
-  final bool isStageUnlocked;
-  final bool isStageComplete;
-  final int stageStars;
+  final bool isUnlocked;
+  final bool isComplete;
+  final int earnedStars;
   final int maxStars;
   final void Function(Level) onTap;
 
@@ -271,9 +327,9 @@ class _StageSection extends StatelessWidget {
     required this.stars,
     required this.unlockedLevel,
     required this.shimmer,
-    required this.isStageUnlocked,
-    required this.isStageComplete,
-    required this.stageStars,
+    required this.isUnlocked,
+    required this.isComplete,
+    required this.earnedStars,
     required this.maxStars,
     required this.onTap,
   });
@@ -283,79 +339,85 @@ class _StageSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
-        // ── Stage header ─────────────────────────────────────
+        // Stage header
         Container(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            gradient: isStageUnlocked
-                ? LinearGradient(
-                    colors: [config.gradStart, config.gradEnd])
-                : LinearGradient(colors: [
-                    Colors.white.withOpacity(0.05),
-                    Colors.white.withOpacity(0.03),
-                  ]),
-            border: !isStageUnlocked
+            gradient: isUnlocked
+                ? LinearGradient(colors: [config.gradStart, config.gradEnd])
+                : null,
+            color: isUnlocked ? null : Colors.white.withOpacity(0.04),
+            border: !isUnlocked
                 ? Border.all(
-                    color: Colors.white.withOpacity(0.10), width: 1)
+                    color: Colors.white.withOpacity(0.08), width: 1)
                 : null,
           ),
           child: Row(
             children: [
               Icon(config.icon,
-                  color: isStageUnlocked
-                      ? Colors.white
-                      : Colors.white24,
+                  color: isUnlocked ? Colors.white : Colors.white24,
                   size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(config.label,
-                        style: TextStyle(
-                            color: isStageUnlocked
-                                ? Colors.white
-                                : Colors.white30,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                            letterSpacing: 2)),
+                    Row(
+                      children: [
+                        Text(
+                          'STAGE ${config.number}  ',
+                          style: TextStyle(
+                              color: isUnlocked
+                                  ? Colors.white.withOpacity(0.60)
+                                  : Colors.white.withOpacity(0.20),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2),
+                        ),
+                        Text(
+                          config.label,
+                          style: TextStyle(
+                              color: isUnlocked
+                                  ? Colors.white
+                                  : Colors.white30,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5),
+                        ),
+                      ],
+                    ),
                     Text(config.subtitle,
                         style: TextStyle(
-                            color: isStageUnlocked
-                                ? Colors.white.withOpacity(0.60)
-                                : Colors.white.withOpacity(0.20),
+                            color: isUnlocked
+                                ? Colors.white.withOpacity(0.55)
+                                : Colors.white.withOpacity(0.18),
                             fontSize: 11)),
                   ],
                 ),
               ),
-              // Stars earned
-              if (isStageUnlocked)
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded,
-                        color: Color(0xFFFFD700), size: 14),
-                    const SizedBox(width: 3),
-                    Text('$stageStars/$maxStars',
-                        style: const TextStyle(
-                            color: Color(0xFFFFD700),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800)),
-                  ],
-                )
-              else
+              if (isUnlocked) ...[
+                const Icon(Icons.star_rounded,
+                    color: Color(0xFFFFD700), size: 13),
+                const SizedBox(width: 3),
+                Text('$earnedStars/$maxStars',
+                    style: const TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800)),
+              ] else
                 const Icon(Icons.lock_rounded,
                     color: Colors.white24, size: 18),
             ],
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // ── Level grid ───────────────────────────────────────
-        _LevelGrid(
+        // Level tiles row (max 3 per stage so always 1 row)
+        _LevelRow(
           levels: levels,
           stars: stars,
           unlockedLevel: unlockedLevel,
@@ -368,8 +430,8 @@ class _StageSection extends StatelessWidget {
   }
 }
 
-// ── Level grid (5 tiles per row) ─────────────────────────────────
-class _LevelGrid extends StatelessWidget {
+// ─── Level row (3 tiles side by side) ────────────────────────────
+class _LevelRow extends StatelessWidget {
   final List<Level> levels;
   final Map<int, int> stars;
   final int unlockedLevel;
@@ -377,7 +439,7 @@ class _LevelGrid extends StatelessWidget {
   final AnimationController shimmer;
   final void Function(Level) onTap;
 
-  const _LevelGrid({
+  const _LevelRow({
     required this.levels,
     required this.stars,
     required this.unlockedLevel,
@@ -388,36 +450,24 @@ class _LevelGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cols = 5;
-    final rows = (levels.length / cols).ceil();
-    final tileWidth =
-        (MediaQuery.of(context).size.width - 32 - (cols - 1) * 6) / cols;
+    final width = MediaQuery.of(context).size.width;
+    // 3 tiles with spacing: subtract padding (32) and 2 gaps (8 each)
+    final tileW = (width - 32 - 16) / 3;
 
-    return Column(
-      children: List.generate(rows, (r) {
+    return Row(
+      children: List.generate(levels.length, (i) {
+        final lvl = levels[i];
         return Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Row(
-            children: List.generate(cols, (c) {
-              final idx = r * cols + c;
-              if (idx >= levels.length) {
-                return SizedBox(width: tileWidth);
-              }
-              final level = levels[idx];
-              return Padding(
-                padding: EdgeInsets.only(right: c < cols - 1 ? 6 : 0),
-                child: _LevelTile(
-                  level: level,
-                  starCount: stars[level.id] ?? 0,
-                  isUnlocked: level.id <= unlockedLevel,
-                  isNext: level.id == unlockedLevel,
-                  gradColors: gradColors,
-                  shimmer: shimmer,
-                  tileWidth: tileWidth,
-                  onTap: () => onTap(level),
-                ),
-              );
-            }),
+          padding: EdgeInsets.only(right: i < levels.length - 1 ? 8 : 0),
+          child: _LevelTile(
+            level: lvl,
+            starCount: stars[lvl.id] ?? 0,
+            isUnlocked: lvl.id <= unlockedLevel,
+            isNext: lvl.id == unlockedLevel,
+            gradColors: gradColors,
+            shimmer: shimmer,
+            tileW: tileW,
+            onTap: () => onTap(lvl),
           ),
         );
       }),
@@ -425,7 +475,7 @@ class _LevelGrid extends StatelessWidget {
   }
 }
 
-// ── Single level tile ─────────────────────────────────────────────
+// ─── Single level tile ────────────────────────────────────────────
 class _LevelTile extends StatelessWidget {
   final Level level;
   final int starCount;
@@ -433,7 +483,7 @@ class _LevelTile extends StatelessWidget {
   final bool isNext;
   final List<Color> gradColors;
   final AnimationController shimmer;
-  final double tileWidth;
+  final double tileW;
   final VoidCallback onTap;
 
   const _LevelTile({
@@ -443,7 +493,7 @@ class _LevelTile extends StatelessWidget {
     required this.isNext,
     required this.gradColors,
     required this.shimmer,
-    required this.tileWidth,
+    required this.tileW,
     required this.onTap,
   });
 
@@ -455,16 +505,16 @@ class _LevelTile extends StatelessWidget {
         animation: shimmer,
         builder: (_, __) {
           return Container(
-            width: tileWidth,
-            height: tileWidth * 1.15,
+            width: tileW,
+            height: tileW * 1.20,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               gradient: isUnlocked
                   ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        gradColors[0].withOpacity(0.85),
+                        gradColors[0].withOpacity(0.90),
                         gradColors[1].withOpacity(0.80),
                       ],
                     )
@@ -473,20 +523,18 @@ class _LevelTile extends StatelessWidget {
               border: isNext
                   ? Border.all(
                       color: Colors.white
-                          .withOpacity(0.35 + shimmer.value * 0.50),
-                      width: 2.0)
-                  : isUnlocked
-                      ? null
-                      : Border.all(
-                          color: Colors.white.withOpacity(0.08),
-                          width: 1),
+                          .withOpacity(0.30 + shimmer.value * 0.55),
+                      width: 2.5)
+                  : !isUnlocked
+                      ? Border.all(
+                          color: Colors.white.withOpacity(0.07), width: 1)
+                      : null,
               boxShadow: isUnlocked
                   ? [
                       BoxShadow(
-                        color: gradColors[0].withOpacity(0.30),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
+                          color: gradColors[0].withOpacity(0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
                     ]
                   : null,
             ),
@@ -495,31 +543,29 @@ class _LevelTile extends StatelessWidget {
               children: [
                 if (!isUnlocked)
                   Icon(Icons.lock_rounded,
-                      color: Colors.white.withOpacity(0.20), size: 20)
+                      color: Colors.white.withOpacity(0.20), size: 26)
                 else ...[
-                  // Level number
-                  Text(
-                    '${level.id}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: tileWidth > 55 ? 18 : 15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Stars
+                  Text('${level.id}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22)),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       3,
-                      (i) => Icon(
-                        i < starCount
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        size: tileWidth > 55 ? 10 : 9,
-                        color: i < starCount
-                            ? const Color(0xFFFFD700)
-                            : Colors.white.withOpacity(0.20),
+                      (i) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1),
+                        child: Icon(
+                          i < starCount
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          size: 13,
+                          color: i < starCount
+                              ? const Color(0xFFFFD700)
+                              : Colors.white.withOpacity(0.22),
+                        ),
                       ),
                     ),
                   ),

@@ -6,6 +6,7 @@ import 'models/level.dart';
 import 'models/game_state.dart';
 import 'letter_fragments.dart';
 import 'ads_manager.dart';
+import 'sound_manager.dart';
 
 class GameScreen extends StatefulWidget {
   final Level level;
@@ -44,6 +45,8 @@ class _GameScreenState extends State<GameScreen>
 
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);
+    // Pause menu BGM during gameplay; tap sounds take over
+    SoundManager().pauseBGM();
   }
 
   void _onStateChange() {
@@ -76,6 +79,8 @@ class _GameScreenState extends State<GameScreen>
     _comboCtrl.dispose();
     _heartCtrl.dispose();
     _celebCtrl.dispose();
+    // Resume BGM when returning to home/level select
+    SoundManager().resumeBGM();
     super.dispose();
   }
 
@@ -555,7 +560,10 @@ class _GameScreenState extends State<GameScreen>
                   tile: board[r][c],
                   size: cellSize,
                   currentLetter: s.currentLetter,
-                  onTap: () => _logic.onTileTapped(r, c),
+                  onTap: () {
+                    SoundManager().playTap();
+                    _logic.onTileTapped(r, c);
+                  },
                 );
               }),
             );

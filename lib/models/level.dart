@@ -7,154 +7,240 @@ class Level {
   final int starThreshold1;
   final int starThreshold2;
   final int starThreshold3;
+  final int stageNumber;
 
   const Level({
     required this.id,
     required this.targets,
+    required this.stageNumber,
     this.gridSize = 5,
     this.timeLimitSecs = 90,
     this.maxLives = 3,
-    this.starThreshold1 = 200,
-    this.starThreshold2 = 400,
+    this.starThreshold1 = 150,
+    this.starThreshold2 = 350,
     this.starThreshold3 = 600,
   });
 
-  String get stageLabel {
-    if (id <= 10) return 'SINGLE LETTERS';
-    if (id <= 20) return '2-LETTER WORDS';
-    if (id <= 35) return '3-LETTER WORDS';
-    return '4-LETTER WORDS';
-  }
-
-  int get stageIndex {
-    if (id <= 10) return 0;
-    if (id <= 20) return 1;
-    if (id <= 35) return 2;
-    return 3;
-  }
+  static Level byId(int id) => all.firstWhere((l) => l.id == id);
 
   static const List<Level> all = [
 
-    // ══════════════════════════════════════════════════════════════
-    // STAGE 1 — SINGLE LETTERS  (Levels 1–10)
-    // Grid 5×5 · 90s · 3 letters per level
-    // ══════════════════════════════════════════════════════════════
-    Level(id:  1, targets: ['A', 'B', 'C'], gridSize: 5,
-          starThreshold1: 150, starThreshold2: 320, starThreshold3: 500),
-    Level(id:  2, targets: ['D', 'E', 'F'], gridSize: 5,
-          starThreshold1: 155, starThreshold2: 330, starThreshold3: 510),
-    Level(id:  3, targets: ['G', 'H', 'I'], gridSize: 5,
-          starThreshold1: 160, starThreshold2: 340, starThreshold3: 520),
-    Level(id:  4, targets: ['J', 'K', 'L'], gridSize: 5,
-          starThreshold1: 165, starThreshold2: 350, starThreshold3: 530),
-    Level(id:  5, targets: ['M', 'N', 'O'], gridSize: 5,
-          starThreshold1: 170, starThreshold2: 360, starThreshold3: 540),
-    Level(id:  6, targets: ['P', 'Q', 'R'], gridSize: 5,
-          starThreshold1: 175, starThreshold2: 370, starThreshold3: 550),
-    Level(id:  7, targets: ['S', 'T', 'U'], gridSize: 5,
-          starThreshold1: 180, starThreshold2: 380, starThreshold3: 560),
-    Level(id:  8, targets: ['V', 'W', 'X'], gridSize: 5,
-          starThreshold1: 185, starThreshold2: 390, starThreshold3: 570),
-    Level(id:  9, targets: ['Y', 'Z', 'A'], gridSize: 5,
-          starThreshold1: 190, starThreshold2: 400, starThreshold3: 580),
-    Level(id: 10, targets: ['E', 'M', 'S'], gridSize: 5,
-          starThreshold1: 195, starThreshold2: 410, starThreshold3: 590),
+    // ════════════════════════════════════════════════════════════
+    // STAGE 1 — SINGLE LETTERS  (Levels 1–3)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 1, stageNumber: 1, targets: ['A', 'B', 'C'],
+          gridSize: 5,
+          starThreshold1: 120, starThreshold2: 260, starThreshold3: 420),
+    Level(id: 2, stageNumber: 1, targets: ['D', 'E', 'F'],
+          gridSize: 5,
+          starThreshold1: 125, starThreshold2: 270, starThreshold3: 435),
+    Level(id: 3, stageNumber: 1, targets: ['G', 'H', 'I'],
+          gridSize: 5,
+          starThreshold1: 130, starThreshold2: 280, starThreshold3: 450),
 
-    // ══════════════════════════════════════════════════════════════
-    // STAGE 2 — 2-LETTER WORDS  (Levels 11–20)
-    // Grid 5×5 · 90s · 3 words per level
-    // ══════════════════════════════════════════════════════════════
-    Level(id: 11, targets: ['DO', 'GO', 'NO'], gridSize: 5,
-          starThreshold1: 250, starThreshold2: 500, starThreshold3: 750),
-    Level(id: 12, targets: ['TO', 'SO', 'HO'], gridSize: 5,
-          starThreshold1: 260, starThreshold2: 520, starThreshold3: 770),
-    Level(id: 13, targets: ['BE', 'HE', 'ME'], gridSize: 5,
-          starThreshold1: 270, starThreshold2: 540, starThreshold3: 790),
-    Level(id: 14, targets: ['WE', 'IT', 'IF'], gridSize: 5,
-          starThreshold1: 280, starThreshold2: 560, starThreshold3: 810),
-    Level(id: 15, targets: ['IS', 'IN', 'UP'], gridSize: 5,
-          starThreshold1: 290, starThreshold2: 580, starThreshold3: 830),
-    Level(id: 16, targets: ['ON', 'AT', 'AN'], gridSize: 5,
-          starThreshold1: 300, starThreshold2: 600, starThreshold3: 850),
-    Level(id: 17, targets: ['AS', 'BY', 'MY'], gridSize: 5,
-          starThreshold1: 310, starThreshold2: 620, starThreshold3: 870),
-    Level(id: 18, targets: ['OR', 'OF', 'HI'], gridSize: 5,
-          starThreshold1: 320, starThreshold2: 640, starThreshold3: 890),
-    Level(id: 19, targets: ['OX', 'OH', 'AM'], gridSize: 5,
-          starThreshold1: 330, starThreshold2: 660, starThreshold3: 910),
-    Level(id: 20, targets: ['US', 'EX', 'AX'], gridSize: 5,
-          starThreshold1: 340, starThreshold2: 680, starThreshold3: 930),
+    // ════════════════════════════════════════════════════════════
+    // STAGE 2 — 2-LETTER WORDS  (Levels 4–6)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 4, stageNumber: 2, targets: ['DO', 'GO', 'NO'],
+          gridSize: 5,
+          starThreshold1: 200, starThreshold2: 420, starThreshold3: 650),
+    Level(id: 5, stageNumber: 2, targets: ['BE', 'HE', 'ME'],
+          gridSize: 5,
+          starThreshold1: 210, starThreshold2: 440, starThreshold3: 670),
+    Level(id: 6, stageNumber: 2, targets: ['IF', 'IT', 'IS'],
+          gridSize: 5,
+          starThreshold1: 220, starThreshold2: 460, starThreshold3: 690),
 
-    // ══════════════════════════════════════════════════════════════
-    // STAGE 3 — 3-LETTER WORDS  (Levels 21–35)
-    // Grid 6×6 · 90s · 3 words per level
-    // ══════════════════════════════════════════════════════════════
-    Level(id: 21, targets: ['CAT', 'DOG', 'SUN'], gridSize: 6,
-          starThreshold1: 350, starThreshold2: 700, starThreshold3: 1050),
-    Level(id: 22, targets: ['RUN', 'FUN', 'GUN'], gridSize: 6,
-          starThreshold1: 360, starThreshold2: 720, starThreshold3: 1070),
-    Level(id: 23, targets: ['BED', 'RED', 'TED'], gridSize: 6,
-          starThreshold1: 370, starThreshold2: 740, starThreshold3: 1090),
-    Level(id: 24, targets: ['SAD', 'MAD', 'DAD'], gridSize: 6,
-          starThreshold1: 380, starThreshold2: 760, starThreshold3: 1110),
-    Level(id: 25, targets: ['BOX', 'FOX', 'HOT'], gridSize: 6,
-          starThreshold1: 390, starThreshold2: 780, starThreshold3: 1130),
-    Level(id: 26, targets: ['TOP', 'HOP', 'MOP'], gridSize: 6,
-          starThreshold1: 400, starThreshold2: 800, starThreshold3: 1150),
-    Level(id: 27, targets: ['ARM', 'CAR', 'FAR'], gridSize: 6,
-          starThreshold1: 410, starThreshold2: 820, starThreshold3: 1170),
-    Level(id: 28, targets: ['JAR', 'BAR', 'TAR'], gridSize: 6,
-          starThreshold1: 420, starThreshold2: 840, starThreshold3: 1190),
-    Level(id: 29, targets: ['FOR', 'AND', 'BUT'], gridSize: 6,
-          starThreshold1: 430, starThreshold2: 860, starThreshold3: 1210),
-    Level(id: 30, targets: ['NOT', 'GET', 'LET'], gridSize: 6,
-          starThreshold1: 440, starThreshold2: 880, starThreshold3: 1230),
-    Level(id: 31, targets: ['SET', 'WET', 'MET'], gridSize: 6,
-          starThreshold1: 450, starThreshold2: 900, starThreshold3: 1250),
-    Level(id: 32, targets: ['HIT', 'SIT', 'FIT'], gridSize: 6,
-          starThreshold1: 460, starThreshold2: 920, starThreshold3: 1270),
-    Level(id: 33, targets: ['CUT', 'BUT', 'PUT'], gridSize: 6,
-          starThreshold1: 470, starThreshold2: 940, starThreshold3: 1290),
-    Level(id: 34, targets: ['OWL', 'COW', 'HOW'], gridSize: 6,
-          starThreshold1: 480, starThreshold2: 960, starThreshold3: 1310),
-    Level(id: 35, targets: ['SKY', 'FLY', 'DRY'], gridSize: 6,
-          starThreshold1: 490, starThreshold2: 980, starThreshold3: 1330),
+    // ════════════════════════════════════════════════════════════
+    // STAGE 3 — 3-LETTER WORDS  (Levels 7–9)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 7, stageNumber: 3, targets: ['CAT', 'DOG', 'SUN'],
+          gridSize: 5,
+          starThreshold1: 280, starThreshold2: 560, starThreshold3: 840),
+    Level(id: 8, stageNumber: 3, targets: ['BED', 'RED', 'FUN'],
+          gridSize: 5,
+          starThreshold1: 290, starThreshold2: 580, starThreshold3: 870),
+    Level(id: 9, stageNumber: 3, targets: ['BOX', 'FOX', 'HOT'],
+          gridSize: 5,
+          starThreshold1: 300, starThreshold2: 600, starThreshold3: 900),
 
-    // ══════════════════════════════════════════════════════════════
-    // STAGE 4 — 4-LETTER WORDS  (Levels 36–50)
-    // Grid 7×7 · 90s · 3 words per level
-    // ══════════════════════════════════════════════════════════════
-    Level(id: 36, targets: ['STAR', 'MOON', 'FIRE'], gridSize: 7,
-          starThreshold1: 550, starThreshold2: 1100, starThreshold3: 1650),
-    Level(id: 37, targets: ['WIND', 'RAIN', 'SNOW'], gridSize: 7,
+    // ════════════════════════════════════════════════════════════
+    // STAGE 4 — 4-LETTER WORDS  (Levels 10–12)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 10, stageNumber: 4, targets: ['STAR', 'MOON', 'FIRE'],
+          gridSize: 6,
+          starThreshold1: 380, starThreshold2: 750, starThreshold3: 1120),
+    Level(id: 11, stageNumber: 4, targets: ['BEAR', 'DEAR', 'FEAR'],
+          gridSize: 6,
+          starThreshold1: 390, starThreshold2: 770, starThreshold3: 1150),
+    Level(id: 12, stageNumber: 4, targets: ['CAKE', 'LAKE', 'MAKE'],
+          gridSize: 6,
+          starThreshold1: 400, starThreshold2: 790, starThreshold3: 1180),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 5 — 5-LETTER WORDS  (Levels 13–15)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 13, stageNumber: 5, targets: ['APPLE', 'BRAVE', 'CHESS'],
+          gridSize: 6,
+          starThreshold1: 470, starThreshold2: 940, starThreshold3: 1400),
+    Level(id: 14, stageNumber: 5, targets: ['FLAME', 'GLOBE', 'HEART'],
+          gridSize: 6,
+          starThreshold1: 480, starThreshold2: 960, starThreshold3: 1440),
+    Level(id: 15, stageNumber: 5, targets: ['LIGHT', 'MUSIC', 'NIGHT'],
+          gridSize: 6,
+          starThreshold1: 490, starThreshold2: 980, starThreshold3: 1470),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 6 — 6-LETTER WORDS  (Levels 16–18)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 16, stageNumber: 6, targets: ['CASTLE', 'FLOWER', 'JUNGLE'],
+          gridSize: 6,
           starThreshold1: 560, starThreshold2: 1120, starThreshold3: 1680),
-    Level(id: 38, targets: ['BEAR', 'DEAR', 'FEAR'], gridSize: 7,
-          starThreshold1: 570, starThreshold2: 1140, starThreshold3: 1710),
-    Level(id: 39, targets: ['GEAR', 'NEAR', 'YEAR'], gridSize: 7,
-          starThreshold1: 580, starThreshold2: 1160, starThreshold3: 1740),
-    Level(id: 40, targets: ['CAKE', 'LAKE', 'MAKE'], gridSize: 7,
-          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1770),
-    Level(id: 41, targets: ['TAKE', 'WAKE', 'BAKE'], gridSize: 7,
-          starThreshold1: 600, starThreshold2: 1200, starThreshold3: 1800),
-    Level(id: 42, targets: ['BOOK', 'COOK', 'HOOK'], gridSize: 7,
-          starThreshold1: 610, starThreshold2: 1220, starThreshold3: 1830),
-    Level(id: 43, targets: ['LOOK', 'TOOK', 'ROOK'], gridSize: 7,
-          starThreshold1: 620, starThreshold2: 1240, starThreshold3: 1860),
-    Level(id: 44, targets: ['BLUE', 'CLUE', 'GLUE'], gridSize: 7,
-          starThreshold1: 630, starThreshold2: 1260, starThreshold3: 1890),
-    Level(id: 45, targets: ['TRUE', 'FLEW', 'BLEW'], gridSize: 7,
-          starThreshold1: 640, starThreshold2: 1280, starThreshold3: 1920),
-    Level(id: 46, targets: ['BOLD', 'COLD', 'FOLD'], gridSize: 7,
-          starThreshold1: 650, starThreshold2: 1300, starThreshold3: 1950),
-    Level(id: 47, targets: ['GOLD', 'HOLD', 'MOLD'], gridSize: 7,
-          starThreshold1: 660, starThreshold2: 1320, starThreshold3: 1980),
-    Level(id: 48, targets: ['BEST', 'FEST', 'NEST'], gridSize: 7,
-          starThreshold1: 670, starThreshold2: 1340, starThreshold3: 2010),
-    Level(id: 49, targets: ['REST', 'TEST', 'VEST'], gridSize: 7,
-          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
-    Level(id: 50, targets: ['GLOW', 'FLOW', 'SLOW'], gridSize: 7,
-          starThreshold1: 700, starThreshold2: 1400, starThreshold3: 2100),
-  ];
+    Level(id: 17, stageNumber: 6, targets: ['BATTLE', 'GARDEN', 'MIRROR'],
+          gridSize: 6,
+          starThreshold1: 575, starThreshold2: 1150, starThreshold3: 1720),
+    Level(id: 18, stageNumber: 6, targets: ['PENCIL', 'ROCKET', 'SILVER'],
+          gridSize: 6,
+          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1760),
 
-  static Level byId(int id) => all.firstWhere((l) => l.id == id);
+    // ════════════════════════════════════════════════════════════
+    // STAGE 7 — 7-LETTER WORDS  (Levels 19–21)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 19, stageNumber: 7, targets: ['CHICKEN', 'LIBRARY', 'MONSTER'],
+          gridSize: 7,
+          starThreshold1: 650, starThreshold2: 1300, starThreshold3: 1950),
+    Level(id: 20, stageNumber: 7, targets: ['CAPTAIN', 'FOREVER', 'MILLION'],
+          gridSize: 7,
+          starThreshold1: 665, starThreshold2: 1330, starThreshold3: 1995),
+    Level(id: 21, stageNumber: 7, targets: ['PATTERN', 'SHELTER', 'THUNDER'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 8 — 8-LETTER WORDS  (Levels 22–24)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 22, stageNumber: 8, targets: ['BIRTHDAY', 'COMPUTER', 'BACKYARD'],
+          gridSize: 7,
+          starThreshold1: 750, starThreshold2: 1500, starThreshold3: 2250),
+    Level(id: 23, stageNumber: 8, targets: ['CHAMPION', 'ELEPHANT', 'THOUSAND'],
+          gridSize: 7,
+          starThreshold1: 765, starThreshold2: 1530, starThreshold3: 2295),
+    Level(id: 24, stageNumber: 8, targets: ['FOOTBALL', 'GREATEST', 'HIGHLAND'],
+          gridSize: 7,
+          starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 9 — 9-LETTER WORDS  (Levels 25–27)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 25, stageNumber: 9, targets: ['CHOCOLATE', 'BUTTERFLY', 'PINEAPPLE'],
+          gridSize: 7,
+          starThreshold1: 840, starThreshold2: 1680, starThreshold3: 2520),
+    Level(id: 26, stageNumber: 9, targets: ['ADVENTURE', 'CAREFULLY', 'DANGEROUS'],
+          gridSize: 7,
+          starThreshold1: 860, starThreshold2: 1720, starThreshold3: 2580),
+    Level(id: 27, stageNumber: 9, targets: ['YESTERDAY', 'BEAUTIFUL', 'BRILLIANT'],
+          gridSize: 7,
+          starThreshold1: 880, starThreshold2: 1760, starThreshold3: 2640),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 10 — 10-LETTER WORDS  (Levels 28–30)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 28, stageNumber: 10, targets: ['STRAWBERRY', 'BASKETBALL', 'WATERMELON'],
+          gridSize: 8,
+          starThreshold1: 950, starThreshold2: 1900, starThreshold3: 2850),
+    Level(id: 29, stageNumber: 10, targets: ['ACCOMPLISH', 'BIRTHPLACE', 'CALCULATED'],
+          gridSize: 8,
+          starThreshold1: 975, starThreshold2: 1950, starThreshold3: 2925),
+    Level(id: 30, stageNumber: 10, targets: ['EVERYTHING', 'FOUNDATION', 'GENERATION'],
+          gridSize: 8,
+          starThreshold1: 1000, starThreshold2: 2000, starThreshold3: 3000),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 11 — COMPOUND WORDS  (Levels 31–33)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 31, stageNumber: 11, targets: ['BEDROOM', 'SUNBURN', 'RAINBOW'],
+          gridSize: 7,
+          starThreshold1: 650, starThreshold2: 1300, starThreshold3: 1950),
+    Level(id: 32, stageNumber: 11, targets: ['SUNSHINE', 'BIRTHDAY', 'BACKPACK'],
+          gridSize: 7,
+          starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
+    Level(id: 33, stageNumber: 11, targets: ['CLASSROOM', 'BREAKFAST', 'AFTERNOON'],
+          gridSize: 7,
+          starThreshold1: 860, starThreshold2: 1720, starThreshold3: 2580),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 12 — TECH & CODE WORDS  (Levels 34–36)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 34, stageNumber: 12, targets: ['PIXEL', 'BYTES', 'CACHE'],
+          gridSize: 6,
+          starThreshold1: 490, starThreshold2: 980, starThreshold3: 1470),
+    Level(id: 35, stageNumber: 12, targets: ['SYSTEM', 'SCREEN', 'ONLINE'],
+          gridSize: 6,
+          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1760),
+    Level(id: 36, stageNumber: 12, targets: ['NETWORK', 'BROWSER', 'PROGRAM'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 13 — SCIENCE TERMS  (Levels 37–39)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 37, stageNumber: 13, targets: ['ATOM', 'CELL', 'GENE'],
+          gridSize: 6,
+          starThreshold1: 400, starThreshold2: 790, starThreshold3: 1180),
+    Level(id: 38, stageNumber: 13, targets: ['ENERGY', 'FUSION', 'PROTON'],
+          gridSize: 6,
+          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1760),
+    Level(id: 39, stageNumber: 13, targets: ['QUANTUM', 'GRAVITY', 'NUCLEUS'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 14 — GEOGRAPHY  (Levels 40–42)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 40, stageNumber: 14, targets: ['CHINA', 'JAPAN', 'INDIA'],
+          gridSize: 6,
+          starThreshold1: 490, starThreshold2: 980, starThreshold3: 1470),
+    Level(id: 41, stageNumber: 14, targets: ['FRANCE', 'BRAZIL', 'MEXICO'],
+          gridSize: 6,
+          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1760),
+    Level(id: 42, stageNumber: 14, targets: ['ENGLAND', 'NIGERIA', 'GERMANY'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 15 — NATURE & ANIMALS  (Levels 43–45)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 43, stageNumber: 15, targets: ['FOREST', 'DESERT', 'CANYON'],
+          gridSize: 6,
+          starThreshold1: 590, starThreshold2: 1180, starThreshold3: 1760),
+    Level(id: 44, stageNumber: 15, targets: ['OCTOPUS', 'LEOPARD', 'PENGUIN'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+    Level(id: 45, stageNumber: 15, targets: ['ELEPHANT', 'DOLPHINS', 'FLAMINGO'],
+          gridSize: 7,
+          starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 16 — BODY & MIND  (Levels 46–48)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 46, stageNumber: 16, targets: ['HEART', 'BRAIN', 'SPINE'],
+          gridSize: 6,
+          starThreshold1: 490, starThreshold2: 980, starThreshold3: 1470),
+    Level(id: 47, stageNumber: 16, targets: ['STOMACH', 'EYEBROW', 'FINGERS'],
+          gridSize: 7,
+          starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
+    Level(id: 48, stageNumber: 16, targets: ['SKELETON', 'MOLECULE', 'MEMBRANE'],
+          gridSize: 7,
+          starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
+
+    // ════════════════════════════════════════════════════════════
+    // STAGE 17 — GRAND MASTER  (Levels 49–50)
+    // ════════════════════════════════════════════════════════════
+    Level(id: 49, stageNumber: 17, targets: ['ACCOMPLISH', 'BIRTHRIGHT', 'CALCULATED'],
+          gridSize: 8,
+          starThreshold1: 975, starThreshold2: 1950, starThreshold3: 2925),
+    Level(id: 50, stageNumber: 17, targets: ['UNDERSTAND', 'EVERYWHERE', 'FRIENDSHIP'],
+          gridSize: 8,
+          starThreshold1: 1000, starThreshold2: 2000, starThreshold3: 3000),
+  ];
 }

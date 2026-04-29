@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'level_select_screen.dart';
 import 'settings_screen.dart';
 import 'ads_manager.dart';
+import 'sound_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _btnScale = Tween(begin: 1.0, end: 0.94).animate(
         CurvedAnimation(parent: _btnCtrl, curve: Curves.easeInOut));
     _loadProgress();
+    // Start BGM when home screen loads
+    SoundManager().playBGM();
   }
 
   Future<void> _loadProgress() async {
