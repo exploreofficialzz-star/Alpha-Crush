@@ -22,7 +22,6 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _heartCtrl;
   late AnimationController _celebCtrl;
   late Animation<double> _comboScale;
-  late Animation<double> _celebScale;
 
   bool _resultShown = false;
 
@@ -42,9 +41,6 @@ class _GameScreenState extends State<GameScreen>
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.5), weight: 50),
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _comboCtrl, curve: Curves.easeInOut));
-
-    _celebScale = CurvedAnimation(parent: _celebCtrl, curve: Curves.elasticOut)
-        .drive(Tween(begin: 0.0, end: 1.0));
 
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);

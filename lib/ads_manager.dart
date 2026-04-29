@@ -51,9 +51,7 @@ class AdsManager {
       adUnitId: _bannerAdUnitId,
       size: size,
       request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdFailedToLoad: onError,
-      ),
+      listener: BannerAdListener(onAdFailedToLoad: onError),
     );
     banner.load();
     return banner;
@@ -173,13 +171,14 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    _banner = AdsManager().createBanner(
+    _banner = BannerAd(
+      adUnitId: AdsManager._bannerAdUnitId,
       size: AdSize.banner,
-      onError: (_, __) => setState(() => _loaded = false),
-    );
-    _banner!.listener = BannerAdListener(
-      onAdLoaded: (_) => setState(() => _loaded = true),
-      onAdFailedToLoad: (_, __) => setState(() => _loaded = false),
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => setState(() => _loaded = true),
+        onAdFailedToLoad: (_, __) => setState(() => _loaded = false),
+      ),
     );
     _banner!.load();
   }

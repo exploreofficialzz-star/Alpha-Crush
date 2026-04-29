@@ -140,7 +140,7 @@ class GameLogic extends ChangeNotifier {
 
   void _onLetterComplete(
       GameState s, List<List<CellTile>> board, int combo, int pts) {
-    final wordBonus = 100;
+    const wordBonus = 100;
     final newScore = s.score + pts + wordBonus;
 
     // Advance within word
@@ -197,7 +197,7 @@ class GameLogic extends ChangeNotifier {
     newBoard[row][col] = tile.copyWith(isShaking: true);
 
     final newLives = s.lives - 1;
-    final newCombo = 0;
+    const newCombo = 0;
 
     if (newLives <= 0) {
       _timer?.cancel();

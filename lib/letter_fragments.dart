@@ -257,8 +257,8 @@ class PiecePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(PiecePainter old) =>
-      old.pieceIndex != pieceIndex || old.letter != letter;
+  bool shouldRepaint(PiecePainter oldDelegate) =>
+      oldDelegate.pieceIndex != pieceIndex || oldDelegate.letter != letter;
 }
 
 /// Draws the FULL letter shadow, lighting up collected pieces.
@@ -303,6 +303,6 @@ class ShadowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(ShadowPainter old) =>
-      old.collected != collected || old.letter != letter;
+  bool shouldRepaint(ShadowPainter oldDelegate) =>
+      oldDelegate.collected != collected || oldDelegate.letter != letter;
 }
