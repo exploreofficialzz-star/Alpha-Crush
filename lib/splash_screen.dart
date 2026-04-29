@@ -115,11 +115,6 @@ class _SplashScreenState extends State<SplashScreen>
                           height: 140,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(32),
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFF6A11CB).withOpacity(0.6),
@@ -128,15 +123,13 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'AC',
-                              style: TextStyle(
-                                fontSize: 54,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 4,
-                              ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(32),
+                            child: Image.asset(
+                              'assets/images/app_icon.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
@@ -249,10 +242,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   Widget _floatingTile(int i, Size screen) {
     final positions = [
-      const Offset(0.08, 0.12), const Offset(0.85, 0.08), const Offset(0.15, 0.78),
-      const Offset(0.82, 0.72), const Offset(0.55, 0.04), const Offset(0.03, 0.45),
-      const Offset(0.92, 0.38), const Offset(0.44, 0.88), const Offset(0.70, 0.55),
-      const Offset(0.28, 0.30), const Offset(0.62, 0.22), const Offset(0.10, 0.60),
+      Offset(0.08, 0.12), Offset(0.85, 0.08), Offset(0.15, 0.78),
+      Offset(0.82, 0.72), Offset(0.55, 0.04), Offset(0.03, 0.45),
+      Offset(0.92, 0.38), Offset(0.44, 0.88), Offset(0.70, 0.55),
+      Offset(0.28, 0.30), Offset(0.62, 0.22), Offset(0.10, 0.60),
     ];
     final p = positions[i % positions.length];
     return Positioned(

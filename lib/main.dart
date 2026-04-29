@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'splash_screen.dart';
 import 'ads_manager.dart';
+import 'sound_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,7 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
   await AdsManager().initialize();
+  await SoundManager().initialize();
   runApp(const AlphaCrushApp());
 }
 

@@ -22,6 +22,7 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _heartCtrl;
   late AnimationController _celebCtrl;
   late Animation<double> _comboScale;
+  late Animation<double> _celebScale;
 
   bool _resultShown = false;
 
@@ -42,6 +43,9 @@ class _GameScreenState extends State<GameScreen>
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _comboCtrl, curve: Curves.easeInOut));
 
+    _celebScale = CurvedAnimation(parent: _celebCtrl, curve: Curves.elasticOut)
+        .drive(Tween(begin: 0.0, end: 1.0));
+
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);
   }
@@ -51,6 +55,12 @@ class _GameScreenState extends State<GameScreen>
     setState(() {});
     final s = _logic.state;
     if (s == null) return;
+
+    // Interstitial on every 3rd wrong tap
+    if (_logic.failCount > 0 && _logic.failCount % 3 == 0) {
+      AdsManager().showInterstitial();
+    }
+
     if (s.comboCount > 1) _comboCtrl.forward(from: 0);
     if (s.isLevelComplete && !_resultShown) {
       _resultShown = true;

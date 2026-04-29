@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'level_select_screen.dart';
+import 'settings_screen.dart';
 import 'ads_manager.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -96,6 +97,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       _statChip(Icons.emoji_events_rounded,
                           _highScore.toString(), const Color(0xFFFFD700)),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context,
+                            MaterialPageRoute(
+                                builder: (_) => const SettingsScreen())),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.white.withOpacity(0.08),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.15),
+                                width: 1),
+                          ),
+                          child: const Icon(Icons.settings_rounded,
+                              color: Colors.white70, size: 20),
+                        ),
+                      ),
                       _statChip(Icons.lock_open_rounded,
                           'LVL $_unlockedLevel', const Color(0xFF64B5F6)),
                     ],
@@ -110,11 +128,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   height: 110,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                    ),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF6A11CB).withOpacity(0.55),
@@ -123,13 +136,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Text('AC',
-                        style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 3)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 110,
+                      height: 110,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
 

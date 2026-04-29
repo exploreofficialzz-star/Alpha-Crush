@@ -4,13 +4,18 @@ import 'package:flutter/material.dart';
 import 'models/game_state.dart';
 import 'models/level.dart';
 import 'letter_fragments.dart';
+import 'sound_manager.dart';
 
 class GameLogic extends ChangeNotifier {
   GameState? _state;
   Timer? _timer;
   final _rng = Random();
+  int _failCount = 0;
+  int _completeCount = 0;
 
   GameState? get state => _state;
+  int get failCount => _failCount;
+  int get completeCount => _completeCount;
 
   // ─── Init ──────────────────────────────────────────────────────────────────
   void startLevel(Level level) {
@@ -124,6 +129,9 @@ class GameLogic extends ChangeNotifier {
     final combo = s.comboCount + 1;
     final pts = (50 + combo * 10).clamp(50, 200);
 
+    if (combo > 1) SoundManager().playCombo();
+    else SoundManager().playCorrect();
+
     // Is the current letter now complete?
     if (newBuild.isComplete) {
       _onLetterComplete(s, newBoard, combo + 1, pts);
@@ -140,7 +148,7 @@ class GameLogic extends ChangeNotifier {
 
   void _onLetterComplete(
       GameState s, List<List<CellTile>> board, int combo, int pts) {
-    const wordBonus = 100;
+    final wordBonus = 100;
     final newScore = s.score + pts + wordBonus;
 
     // Advance within word
@@ -153,6 +161,8 @@ class GameLogic extends ChangeNotifier {
       if (nextTargetIdx >= s.level.targets.length) {
         // All 5 done → level complete
         _timer?.cancel();
+        _completeCount++;
+        SoundManager().playBuildComplete();
         _state = s.copyWith(
           board: board,
           score: newScore,
@@ -191,13 +201,16 @@ class GameLogic extends ChangeNotifier {
     final s = _state!;
     final tile = s.board[row][col];
 
+    SoundManager().playWrong();
+    _failCount++;
+
     // Flash shake
     final newBoard =
         s.board.map((r) => List<CellTile>.from(r)).toList();
     newBoard[row][col] = tile.copyWith(isShaking: true);
 
     final newLives = s.lives - 1;
-    const newCombo = 0;
+    final newCombo = 0;
 
     if (newLives <= 0) {
       _timer?.cancel();
