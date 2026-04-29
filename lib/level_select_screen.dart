@@ -259,7 +259,8 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
 
   void _onLevelTap(Level level) {
     if (level.id > _unlockedLevel) return;
-    if (level.id % 3 == 0) {
+    // Interstitial every 5th level tap (not 3rd — less aggressive)
+    if (level.id % 5 == 0) {
       AdsManager()
           .showInterstitial(onDismissed: () => _goToGame(level));
     } else {

@@ -34,6 +34,10 @@ class AdsManager {
   RewardedAd? _rewardedAd;
   bool _interstitialReady = false;
   bool _rewardedReady = false;
+  DateTime? _lastInterstitialShown; // cooldown tracker
+
+  // Minimum gap between interstitial shows: 45 seconds
+  static const _interstitialCooldown = Duration(seconds: 45);
 
   // ─── Init ──────────────────────────────────────────────────────────────────
   Future<void> initialize() async {
@@ -77,11 +81,22 @@ class AdsManager {
   }
 
   void showInterstitial({VoidCallback? onDismissed}) {
+    // Cooldown guard — don't show if shown recently
+    if (_lastInterstitialShown != null) {
+      final elapsed = DateTime.now().difference(_lastInterstitialShown!);
+      if (elapsed < _interstitialCooldown) {
+        onDismissed?.call();
+        return;
+      }
+    }
+
     if (!_interstitialReady || _interstitialAd == null) {
       onDismissed?.call();
       _loadInterstitial();
       return;
     }
+
+    _lastInterstitialShown = DateTime.now();
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();

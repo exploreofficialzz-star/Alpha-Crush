@@ -2,7 +2,7 @@ class Level {
   final int id;
   final List<String> targets; // exactly 3 per level
   final int gridSize;
-  final int timeLimitSecs; // flat 90s all levels
+  final int timeLimitSecs; // flat 100s per word, resets on each new word
   final int maxLives;
   final int starThreshold1;
   final int starThreshold2;
@@ -14,7 +14,7 @@ class Level {
     required this.targets,
     required this.stageNumber,
     this.gridSize = 5,
-    this.timeLimitSecs = 90,
+    this.timeLimitSecs = 100,
     this.maxLives = 3,
     this.starThreshold1 = 150,
     this.starThreshold2 = 350,

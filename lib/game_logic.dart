@@ -20,6 +20,8 @@ class GameLogic extends ChangeNotifier {
   // ─── Init ──────────────────────────────────────────────────────────────────
   void startLevel(Level level) {
     _timer?.cancel();
+    _failCount = 0;
+    _completeCount = 0;
     final build = LetterBuild(
       letter: level.targets[0][0].toUpperCase(),
     );
@@ -154,18 +156,18 @@ class GameLogic extends ChangeNotifier {
     const wordBonus = 100;
     final newScore = s.score + pts + wordBonus;
 
-    // Advance within word
     final word = s.currentWord;
     final nextLetterIdx = s.letterIndex + 1;
 
     if (nextLetterIdx >= word.length) {
-      // Word complete — advance to next target
+      // ── Word complete ────────────────────────────────────────────
+      SoundManager().playBuildComplete();
       final nextTargetIdx = s.targetIndex + 1;
+
       if (nextTargetIdx >= s.level.targets.length) {
-        // All 5 done → level complete
+        // All words done → level complete
         _timer?.cancel();
         _completeCount++;
-        SoundManager().playBuildComplete();
         _state = s.copyWith(
           board: board,
           score: newScore,
@@ -174,7 +176,7 @@ class GameLogic extends ChangeNotifier {
           isLevelComplete: true,
         );
       } else {
-        // Next word
+        // Next word — RESET timer to full 100s
         final nextLetter =
             s.level.targets[nextTargetIdx][0].toUpperCase();
         _state = s.copyWith(
@@ -184,10 +186,14 @@ class GameLogic extends ChangeNotifier {
           comboCount: 0,
           targetIndex: nextTargetIdx,
           letterIndex: 0,
+          timeRemaining: s.level.timeLimitSecs, // ← reset per word
         );
+        // Restart timer fresh for the new word
+        _timer?.cancel();
+        _startTimer();
       }
     } else {
-      // Next letter in same word
+      // ── Next letter in SAME word — timer keeps counting ──────────
       final nextLetter = word[nextLetterIdx].toUpperCase();
       _state = s.copyWith(
         board: _buildBoard(s.level, s.targetIndex, nextLetterIdx),
@@ -195,6 +201,7 @@ class GameLogic extends ChangeNotifier {
         score: newScore,
         comboCount: 0,
         letterIndex: nextLetterIdx,
+        // timeRemaining NOT touched — continues from where it was
       );
     }
     notifyListeners();

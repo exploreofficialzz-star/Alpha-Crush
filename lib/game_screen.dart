@@ -55,12 +55,8 @@ class _GameScreenState extends State<GameScreen>
     final s = _logic.state;
     if (s == null) return;
 
-    // Interstitial on every 3rd wrong tap
-    if (_logic.failCount > 0 && _logic.failCount % 3 == 0) {
-      AdsManager().showInterstitial();
-    }
-
     if (s.comboCount > 1) _comboCtrl.forward(from: 0);
+
     if (s.isLevelComplete && !_resultShown) {
       _resultShown = true;
       _celebCtrl.forward(from: 0);
@@ -104,39 +100,44 @@ class _GameScreenState extends State<GameScreen>
     final s = _logic.state!;
     final stars = s.getStars();
     _saveProgress(stars);
-    AdsManager().showInterstitial(onDismissed: () {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => _LevelCompleteDialog(
-          score: s.score,
-          stars: stars,
-          level: widget.level,
-          onNext: () {
-            Navigator.pop(context);
-            final nextId = widget.level.id + 1;
-            if (nextId <= 20) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        GameScreen(level: Level.byId(nextId))),
-              );
-            } else {
-              Navigator.popUntil(context, (r) => r.isFirst);
-            }
-          },
-          onReplay: () {
-            Navigator.pop(context);
-            setState(() => _resultShown = false);
-            _logic.startLevel(widget.level);
-          },
-          onHome: () =>
-              Navigator.popUntil(context, (r) => r.isFirst),
-        ),
-      );
-    });
+    // Show interstitial on every other level completion (not every single time)
+    if (widget.level.id % 2 == 0) {
+      AdsManager().showInterstitial(onDismissed: () => _showCompleteDialog(s, stars));
+    } else {
+      _showCompleteDialog(s, stars);
+    }
+  }
+
+  void _showCompleteDialog(GameState s, int stars) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _LevelCompleteDialog(
+        score: s.score,
+        stars: stars,
+        level: widget.level,
+        onNext: () {
+          Navigator.pop(context);
+          final nextId = widget.level.id + 1;
+          if (nextId <= 50) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => GameScreen(level: Level.byId(nextId))),
+            );
+          } else {
+            Navigator.popUntil(context, (r) => r.isFirst);
+          }
+        },
+        onReplay: () {
+          Navigator.pop(context);
+          setState(() => _resultShown = false);
+          _logic.startLevel(widget.level);
+        },
+        onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
+      ),
+    );
   }
 
   void _showGameOver() {
