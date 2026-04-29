@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdsManager {
@@ -7,164 +7,198 @@ class AdsManager {
   factory AdsManager() => _instance;
   AdsManager._internal();
 
-  // Ad Unit IDs - Using test IDs for development, replace with production IDs
-  static String get bannerAdUnitId {
-    if (kDebugMode) {
-      return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/6300978111'
-          : 'ca-app-pub-3940256099942544/2934735716';
+  // ─── Ad Unit IDs (replace with real IDs before release) ──────────────────
+  static String get _bannerAdUnitId {
+    if (Platform.isAndroid) {
+      return 'ca-app-pub-3940256099942544/6300978111'; // test
     }
-    return Platform.isAndroid
-        ? 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'
-        : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+    return 'ca-app-pub-3940256099942544/2934735716'; // test iOS
   }
 
-  static String get interstitialAdUnitId {
-    if (kDebugMode) {
-      return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/1033173712'
-          : 'ca-app-pub-3940256099942544/4411468910';
+  static String get _interstitialAdUnitId {
+    if (Platform.isAndroid) {
+      return 'ca-app-pub-3940256099942544/1033173712'; // test
     }
-    return Platform.isAndroid
-        ? 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'
-        : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+    return 'ca-app-pub-3940256099942544/4411468910'; // test iOS
   }
 
-  static String get rewardedAdUnitId {
-    if (kDebugMode) {
-      return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/5224354917'
-          : 'ca-app-pub-3940256099942544/1712485313';
+  static String get _rewardedAdUnitId {
+    if (Platform.isAndroid) {
+      return 'ca-app-pub-3940256099942544/5224354917'; // test
     }
-    return Platform.isAndroid
-        ? 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX'
-        : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+    return 'ca-app-pub-3940256099942544/1712485313'; // test iOS
   }
 
-  BannerAd? _bannerAd;
+  // ─── State ─────────────────────────────────────────────────────────────────
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
+  bool _interstitialReady = false;
+  bool _rewardedReady = false;
 
-  bool _isInterstitialAdReady = false;
-  bool _isRewardedAdReady = false;
-
-  BannerAd? get bannerAd => _bannerAd;
-  bool get isBannerAdLoaded => _bannerAd != null;
-
+  // ─── Init ──────────────────────────────────────────────────────────────────
   Future<void> initialize() async {
     await MobileAds.instance.initialize();
-    _loadBannerAd();
-    _loadInterstitialAd();
-    _loadRewardedAd();
+    _loadInterstitial();
+    _loadRewarded();
   }
 
-  void _loadBannerAd() {
-    _bannerAd = BannerAd(
-      adUnitId: bannerAdUnitId,
-      size: AdSize.banner,
+  // ─── Banner ────────────────────────────────────────────────────────────────
+  BannerAd createBanner({
+    required AdSize size,
+    required void Function(Ad, LoadAdError) onError,
+  }) {
+    final banner = BannerAd(
+      adUnitId: _bannerAdUnitId,
+      size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (ad) {
-          debugPrint('Banner ad loaded');
-        },
-        onAdFailedToLoad: (ad, error) {
-          debugPrint('Banner ad failed to load: ${error.message}');
-          ad.dispose();
-          _bannerAd = null;
-        },
+        onAdFailedToLoad: onError,
       ),
     );
-    _bannerAd!.load();
+    banner.load();
+    return banner;
   }
 
-  void _loadInterstitialAd() {
+  // ─── Interstitial ─────────────────────────────────────────────────────────
+  void _loadInterstitial() {
     InterstitialAd.load(
-      adUnitId: interstitialAdUnitId,
+      adUnitId: _interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
-          _isInterstitialAdReady = true;
-          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _isInterstitialAdReady = false;
-              _loadInterstitialAd();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _isInterstitialAdReady = false;
-              _loadInterstitialAd();
-            },
-          );
+          _interstitialReady = true;
+          ad.setImmersiveMode(true);
         },
-        onAdFailedToLoad: (error) {
-          debugPrint('Interstitial ad failed to load: ${error.message}');
-          _isInterstitialAdReady = false;
+        onAdFailedToLoad: (_) {
+          _interstitialReady = false;
+          Future.delayed(const Duration(seconds: 30), _loadInterstitial);
         },
       ),
     );
   }
 
-  void _loadRewardedAd() {
+  void showInterstitial({VoidCallback? onDismissed}) {
+    if (!_interstitialReady || _interstitialAd == null) {
+      onDismissed?.call();
+      _loadInterstitial();
+      return;
+    }
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _interstitialAd = null;
+        _interstitialReady = false;
+        _loadInterstitial();
+        onDismissed?.call();
+      },
+      onAdFailedToShowFullScreenContent: (ad, _) {
+        ad.dispose();
+        _interstitialAd = null;
+        _interstitialReady = false;
+        _loadInterstitial();
+        onDismissed?.call();
+      },
+    );
+    _interstitialAd!.show();
+    _interstitialReady = false;
+  }
+
+  // ─── Rewarded ─────────────────────────────────────────────────────────────
+  void _loadRewarded() {
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
+      adUnitId: _rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
-          _isRewardedAdReady = true;
-          _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _isRewardedAdReady = false;
-              _loadRewardedAd();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _isRewardedAdReady = false;
-              _loadRewardedAd();
-            },
-          );
+          _rewardedReady = true;
         },
-        onAdFailedToLoad: (error) {
-          debugPrint('Rewarded ad failed to load: ${error.message}');
-          _isRewardedAdReady = false;
+        onAdFailedToLoad: (_) {
+          _rewardedReady = false;
+          Future.delayed(const Duration(seconds: 30), _loadRewarded);
         },
       ),
     );
   }
 
-  void showBannerAd() {
-    if (_bannerAd == null) {
-      _loadBannerAd();
-    }
-  }
+  bool get isRewardedReady => _rewardedReady;
 
-  void showInterstitialAd() {
-    if (_isInterstitialAdReady && _interstitialAd != null) {
-      _interstitialAd!.show();
-    } else {
-      _loadInterstitialAd();
-    }
-  }
-
-  void showRewardedAd({required Function() onRewarded, Function()? onFailed}) {
-    if (_isRewardedAdReady && _rewardedAd != null) {
-      _rewardedAd!.show(
-        onUserEarnedReward: (ad, reward) {
-          onRewarded();
-        },
-      );
-    } else {
+  void showRewarded({
+    required void Function(RewardItem reward) onEarned,
+    VoidCallback? onFailed,
+  }) {
+    if (!_rewardedReady || _rewardedAd == null) {
       onFailed?.call();
-      _loadRewardedAd();
+      _loadRewarded();
+      return;
     }
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _rewardedAd = null;
+        _rewardedReady = false;
+        _loadRewarded();
+      },
+      onAdFailedToShowFullScreenContent: (ad, _) {
+        ad.dispose();
+        _rewardedAd = null;
+        _rewardedReady = false;
+        onFailed?.call();
+        _loadRewarded();
+      },
+    );
+    _rewardedAd!.show(onUserEarnedReward: (_, reward) => onEarned(reward));
+    _rewardedReady = false;
   }
 
   void dispose() {
-    _bannerAd?.dispose();
     _interstitialAd?.dispose();
     _rewardedAd?.dispose();
+  }
+}
+
+// ─── Banner widget ────────────────────────────────────────────────────────────
+class BannerAdWidget extends StatefulWidget {
+  const BannerAdWidget({super.key});
+
+  @override
+  State<BannerAdWidget> createState() => _BannerAdWidgetState();
+}
+
+class _BannerAdWidgetState extends State<BannerAdWidget> {
+  BannerAd? _banner;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _banner = AdsManager().createBanner(
+      size: AdSize.banner,
+      onError: (_, __) => setState(() => _loaded = false),
+    );
+    _banner!.listener = BannerAdListener(
+      onAdLoaded: (_) => setState(() => _loaded = true),
+      onAdFailedToLoad: (_, __) => setState(() => _loaded = false),
+    );
+    _banner!.load();
+  }
+
+  @override
+  void dispose() {
+    _banner?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _banner == null) {
+      return const SizedBox(height: 50);
+    }
+    return SizedBox(
+      height: _banner!.size.height.toDouble(),
+      width: _banner!.size.width.toDouble(),
+      child: AdWidget(ad: _banner!),
+    );
   }
 }

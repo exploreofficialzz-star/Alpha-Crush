@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'game_screen.dart';
 import 'models/level.dart';
+import 'game_screen.dart';
 import 'ads_manager.dart';
 
 class LevelSelectScreen extends StatefulWidget {
@@ -12,230 +11,301 @@ class LevelSelectScreen extends StatefulWidget {
   State<LevelSelectScreen> createState() => _LevelSelectScreenState();
 }
 
-class _LevelSelectScreenState extends State<LevelSelectScreen> {
-  List<int> _unlockedLevels = [1];
+class _LevelSelectScreenState extends State<LevelSelectScreen>
+    with SingleTickerProviderStateMixin {
   final Map<int, int> _levelStars = {};
+  int _unlockedLevel = 1;
+  late AnimationController _shimmer;
+
+  static const _stageLabels = [
+    'SINGLE LETTERS', '2-LETTER WORDS', '3-LETTER WORDS', '4-LETTER WORDS'
+  ];
+  static const _stageColors = [
+    [Color(0xFF6A11CB), Color(0xFF2575FC)],
+    [Color(0xFFFF8F00), Color(0xFFE53935)],
+    [Color(0xFF00897B), Color(0xFF2E7D32)],
+    [Color(0xFF4A148C), Color(0xFFAD1457)],
+  ];
 
   @override
   void initState() {
     super.initState();
+    _shimmer = AnimationController(
+        vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
     _loadProgress();
-    AdsManager().showInterstitialAd();
   }
 
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    final unlocked = prefs.getStringList('unlocked_levels') ?? ['1'];
-    final starsStr = prefs.getString('level_stars') ?? '';
-    
+    if (!mounted) return;
     setState(() {
-      _unlockedLevels = unlocked.map(int.parse).toList();
-      if (starsStr.isNotEmpty) {
-        final entries = starsStr.split(',');
-        for (var entry in entries) {
-          final parts = entry.split(':');
-          if (parts.length == 2) {
-            _levelStars[int.parse(parts[0])] = int.parse(parts[1]);
-          }
-        }
+      _unlockedLevel = prefs.getInt('unlocked_level') ?? 1;
+      for (int i = 1; i <= 20; i++) {
+        final s = prefs.getInt('stars_$i') ?? 0;
+        if (s > 0) _levelStars[i] = s;
       }
     });
   }
 
-  Color _getLevelColor(int id) {
-    if (id <= 5) return const Color(0xFF4ECDC4);
-    if (id <= 10) return const Color(0xFFFFE66D);
-    if (id <= 15) return const Color(0xFFFF6B6B);
-    return const Color(0xFF96CEB4);
-  }
-
-  String _getStageName(int id) {
-    if (id <= 5) return 'STAGE 1: SIMPLE';
-    if (id <= 10) return 'STAGE 2: MEDIUM';
-    if (id <= 15) return 'STAGE 3: COMPLEX';
-    return 'STAGE 4: WORDS';
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final levels = Level.getAllLevels();
-    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E),
-              Color(0xFF16213E),
-              Color(0xFF0F3460),
-            ],
+            colors: [Color(0xFF0D0D1A), Color(0xFF1A0533), Color(0xFF0D0D1A)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Header
+              // ── Header ──
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.fromLTRB(8, 12, 16, 8),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white70),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Expanded(
-                      child: Text(
-                        'SELECT LEVEL',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                        ),
-                      ),
+                      child: Text('SELECT LEVEL',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 4)),
                     ),
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
-              
-              // Level Grid
+
+              // ── Levels scroll ──
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: (levels.length / 5).ceil(),
-                  itemBuilder: (context, stageIndex) {
-                    final startIdx = stageIndex * 5;
-                    final endIdx = (startIdx + 5).clamp(0, levels.length);
-                    final stageLevels = levels.sublist(startIdx, endIdx);
-                    
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8, bottom: 12, top: 8),
-                          child: Text(
-                            _getStageName(startIdx + 1),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white54,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            childAspectRatio: 0.85,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemCount: stageLevels.length,
-                          itemBuilder: (context, index) {
-                            final level = stageLevels[index];
-                            final isUnlocked = _unlockedLevels.contains(level.id);
-                            final stars = _levelStars[level.id] ?? 0;
-                            
-                            return GestureDetector(
-                              onTap: isUnlocked
-                                  ? () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => GameScreen(levelId: level.id),
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: isUnlocked
-                                      ? LinearGradient(
-                                          colors: [
-                                            _getLevelColor(level.id),
-                                            _getLevelColor(level.id).withOpacity(0.7),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : null,
-                                  color: isUnlocked ? null : Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isUnlocked
-                                        ? Colors.white.withOpacity(0.3)
-                                        : Colors.white.withOpacity(0.1),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (isUnlocked) ...[
-                                      Text(
-                                        '${level.id}',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: List.generate(3, (i) {
-                                          return Icon(
-                                            Icons.star,
-                                            size: 14,
-                                            color: i < stars
-                                                ? const Color(0xFFFFE66D)
-                                                : Colors.white.withOpacity(0.3),
-                                          );
-                                        }),
-                                      ),
-                                    ] else ...[
-                                      Icon(
-                                        Icons.lock,
-                                        color: Colors.white.withOpacity(0.3),
-                                        size: 24,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  itemCount: 4,
+                  itemBuilder: (_, stageIdx) {
+                    final levels = Level.all
+                        .where((l) =>
+                            l.id > stageIdx * 5 && l.id <= (stageIdx + 1) * 5)
+                        .toList();
+                    final colors = _stageColors[stageIdx];
+                    return _StageSection(
+                      label: _stageLabels[stageIdx],
+                      gradColors: colors,
+                      levels: levels,
+                      stars: _levelStars,
+                      unlockedLevel: _unlockedLevel,
+                      shimmer: _shimmer,
+                      onTap: (level) => _onLevelTap(level),
                     );
                   },
                 ),
               ),
+
+              // ── Banner ad ──
+              const BannerAdWidget(),
+              const SizedBox(height: 6),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _buildBannerAd(),
     );
   }
 
-  Widget? _buildBannerAd() {
-    final bannerAd = AdsManager().bannerAd;
-    if (bannerAd != null) {
-      return Container(
-        color: Colors.transparent,
-        width: bannerAd.size.width.toDouble(),
-        height: bannerAd.size.height.toDouble(),
-        child: AdWidget(ad: bannerAd),
-      );
+  void _onLevelTap(Level level) {
+    if (level.id > _unlockedLevel) return;
+    // Show interstitial every 3rd level tap
+    final shouldShow = (level.id % 3 == 0);
+    if (shouldShow) {
+      AdsManager().showInterstitial(onDismissed: () => _goToGame(level));
+    } else {
+      _goToGame(level);
     }
-    return null;
+  }
+
+  void _goToGame(Level level) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (_, __, ___) => GameScreen(level: level),
+        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          position: Tween<Offset>(
+                  begin: const Offset(1.0, 0), end: Offset.zero)
+              .animate(
+                  CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+          child: child,
+        ),
+      ),
+    ).then((_) => _loadProgress());
+  }
+}
+
+// ─── Stage section ────────────────────────────────────────────────────────────
+class _StageSection extends StatelessWidget {
+  final String label;
+  final List<Color> gradColors;
+  final List<Level> levels;
+  final Map<int, int> stars;
+  final int unlockedLevel;
+  final AnimationController shimmer;
+  final void Function(Level) onTap;
+
+  const _StageSection({
+    required this.label,
+    required this.gradColors,
+    required this.levels,
+    required this.stars,
+    required this.unlockedLevel,
+    required this.shimmer,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 18),
+        // Stage header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(colors: gradColors),
+          ),
+          child: Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  letterSpacing: 3)),
+        ),
+        const SizedBox(height: 14),
+        // Level grid: 5 in a row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: levels
+              .map((l) => _LevelTile(
+                    level: l,
+                    starCount: stars[l.id] ?? 0,
+                    isUnlocked: l.id <= unlockedLevel,
+                    gradColors: gradColors,
+                    shimmer: shimmer,
+                    onTap: () => onTap(l),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Single level tile ────────────────────────────────────────────────────────
+class _LevelTile extends StatelessWidget {
+  final Level level;
+  final int starCount;
+  final bool isUnlocked;
+  final List<Color> gradColors;
+  final AnimationController shimmer;
+  final VoidCallback onTap;
+
+  const _LevelTile({
+    required this.level,
+    required this.starCount,
+    required this.isUnlocked,
+    required this.gradColors,
+    required this.shimmer,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = (MediaQuery.of(context).size.width - 32 - 16) / 5;
+    return GestureDetector(
+      onTap: isUnlocked ? onTap : null,
+      child: AnimatedBuilder(
+        animation: shimmer,
+        builder: (_, __) {
+          final isNext = level.id == 1 || starCount == 0 && isUnlocked;
+          return Container(
+            width: size,
+            height: size * 1.2,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: isUnlocked
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        gradColors[0].withOpacity(0.85),
+                        gradColors[1].withOpacity(0.85),
+                      ],
+                    )
+                  : null,
+              color: isUnlocked ? null : Colors.white.withOpacity(0.06),
+              border: isNext
+                  ? Border.all(
+                      color: Colors.white.withOpacity(
+                          0.4 + shimmer.value * 0.5),
+                      width: 2)
+                  : null,
+              boxShadow: isUnlocked
+                  ? [
+                      BoxShadow(
+                        color: gradColors[0].withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!isUnlocked)
+                  Icon(Icons.lock_rounded,
+                      color: Colors.white.withOpacity(0.25), size: 22)
+                else ...[
+                  Text('${level.id}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18)),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      3,
+                      (i) => Icon(
+                        Icons.star_rounded,
+                        size: 10,
+                        color: i < starCount
+                            ? const Color(0xFFFFD700)
+                            : Colors.white.withOpacity(0.18),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

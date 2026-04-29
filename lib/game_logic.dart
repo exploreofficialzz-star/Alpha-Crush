@@ -1,371 +1,306 @@
+import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'models/game_state.dart';
 import 'models/level.dart';
 import 'letter_fragments.dart';
 
 class GameLogic extends ChangeNotifier {
   GameState? _state;
+  Timer? _timer;
+  final _rng = Random();
+
   GameState? get state => _state;
 
-  final Function()? onCombo;
-  final Function()? onBuildComplete;
-  final Function()? onGameOver;
-  final Function()? onLevelComplete;
-  final Function()? onWrongTap;
-
-  GameLogic({
-    this.onCombo,
-    this.onBuildComplete,
-    this.onGameOver,
-    this.onLevelComplete,
-    this.onWrongTap,
-  });
-
+  // ─── Init ──────────────────────────────────────────────────────────────────
   void startLevel(Level level) {
-    final board = _generateBoard(level);
-    final target = level.isWord 
-        ? level.target.toUpperCase().split('').first 
-        : level.target.toUpperCase();
-    
+    _timer?.cancel();
+    final build = LetterBuild(
+      letter: level.targets[0][0].toUpperCase(),
+    );
     _state = GameState(
       level: level,
-      board: board,
-      currentTarget: target,
-      timeRemaining: level.timeLimit,
       lives: level.maxLives,
+      timeRemaining: level.timeLimitSecs,
       isPlaying: true,
+      letterBuild: build,
+      board: _buildBoard(level, 0, 0),
     );
     notifyListeners();
+    _startTimer();
   }
 
-  List<List<CellFragment>> _generateBoard(Level level) {
-    final random = Random();
-    final board = <List<CellFragment>>[];
-    final target = level.isWord ? level.target.toUpperCase() : level.target.toUpperCase();
-    final letters = target.split('');
-    
-    // Collect all required fragments for all letters
-    final List<String> allRequiredFragments = [];
-    for (var letter in letters) {
-      final frags = LetterFragments.getFragments(letter);
-      allRequiredFragments.addAll(frags);
+  // ─── Board builder ─────────────────────────────────────────────────────────
+  // Guarantees at least one piece of the current letter on the board.
+  // Rest are random distractor letters.
+  List<List<CellTile>> _buildBoard(
+      Level level, int targetIdx, int letterIdx) {
+    final size = level.gridSize;
+    final currentWord = level.targets[targetIdx];
+    final currentLetter = currentWord[letterIdx].toUpperCase();
+    final pieceCount = LetterFragments.pieceCount(currentLetter);
+
+    // All available distractor letters (A-Z minus current)
+    final all = List.generate(26, (i) => String.fromCharCode(65 + i))
+      ..remove(currentLetter);
+    all.shuffle(_rng);
+    final distractors = all.take(8).toList();
+
+    // Piece slots: one per piece of current letter
+    final pieceSlots = <_Slot>[];
+    for (int i = 0; i < pieceCount; i++) {
+      pieceSlots.add(_Slot(letter: currentLetter, pieceIndex: i));
     }
 
-    // Create pool of fragments to distribute
-    final List<MapEntry<String, int>> fragmentPool = [];
-    for (int i = 0; i < allRequiredFragments.length; i++) {
-      fragmentPool.add(MapEntry(allRequiredFragments[i], i));
+    // Fill remaining cells
+    final totalCells = size * size;
+    final fillers = <_Slot>[];
+    for (int i = pieceSlots.length; i < totalCells; i++) {
+      final dl = distractors[_rng.nextInt(distractors.length)];
+      final dp = _rng.nextInt(LetterFragments.pieceCount(dl));
+      fillers.add(_Slot(letter: dl, pieceIndex: dp));
     }
 
-    // Add distractor fragments
-    final distractorSymbols = ['/', '\\', '|', '-', '_', '(', ')', '<', '>'];
-    for (int i = 0; i < level.gridSize * 2; i++) {
-      fragmentPool.add(MapEntry(distractorSymbols[random.nextInt(distractorSymbols.length)], -1));
-    }
+    final all2 = [...pieceSlots, ...fillers]..shuffle(_rng);
 
-    // Shuffle pool
-    fragmentPool.shuffle(random);
-
-    // Fill board
-    int poolIndex = 0;
-    for (int row = 0; row < level.gridSize; row++) {
-      final rowList = <CellFragment>[];
-      for (int col = 0; col < level.gridSize; col++) {
-        if (poolIndex < fragmentPool.length) {
-          final entry = fragmentPool[poolIndex];
-          rowList.add(CellFragment(
-            id: '$row-$col',
-            symbol: entry.key,
-            sequenceIndex: entry.value >= 0 ? entry.value : null,
-            requiredFor: entry.value >= 0 ? target : null,
-          ));
-          poolIndex++;
-        } else {
-          rowList.add(CellFragment(
-            id: '$row-$col',
-            symbol: distractorSymbols[random.nextInt(distractorSymbols.length)],
-          ));
-        }
-      }
-      board.add(rowList);
-    }
-
-    return board;
-  }
-
-  void onFragmentTap(int row, int col) {
-    if (_state == null || !_state!.isPlaying || _state!.isPaused) return;
-    
-    final fragment = _state!.board[row][col];
-    if (fragment.isMatched || fragment.isSelected) return;
-
-    final targetSequence = LetterFragments.getFragments(_state!.currentTarget);
-    final currentStep = _state!.selectedFragments.length;
-
-    // Check if this fragment matches the next needed fragment
-    if (currentStep < targetSequence.length && fragment.symbol == targetSequence[currentStep]) {
-      // Correct tap
-      _selectFragment(row, col, fragment);
-      
-      if (_state!.selectedFragments.length == targetSequence.length) {
-        // Letter complete!
-        _completeLetter();
-      } else {
-        // Continue building
-        // notifyListeners(); // called in _selectFragment
-      }
-    } else {
-      // Wrong tap
-      _handleWrongTap(row, col);
-    }
-  }
-
-  void _selectFragment(int row, int col, CellFragment fragment) {
-    final newBoard = _state!.board.map((r) => List<CellFragment>.from(r)).toList();
-    final selected = List<CellFragment>.from(_state!.selectedFragments);
-    
-    final updatedFragment = fragment.copyWith(isSelected: true, scale: 1.2);
-    newBoard[row][col] = updatedFragment;
-    selected.add(updatedFragment);
-
-    // Calculate combo bonus
-    int comboBonus = 0;
-    int newCombo = _state!.comboCount;
-    if (selected.length == LetterFragments.getFragments(_state!.currentTarget).length) {
-      newCombo++;
-      comboBonus = newCombo * 50;
-      if (newCombo >= 2) {
-        onCombo?.call();
-      }
-    }
-
-    _state = _state!.copyWith(
-      board: newBoard,
-      selectedFragments: selected,
-      score: _state!.score + 10 + comboBonus,
-      comboCount: newCombo,
-    );
-    notifyListeners();
-  }
-
-  void _handleWrongTap(int row, int col) {
-    final newBoard = _state!.board.map((r) => List<CellFragment>.from(r)).toList();
-    
-    // Flash the wrong fragment red
-    final wrongFragment = newBoard[row][col];
-    newBoard[row][col] = wrongFragment.copyWith(isAnimating: true, scale: 0.8);
-
-    int newLives = _state!.lives - 1;
-    int newScore = _state!.score - 20;
-    if (newScore < 0) newScore = 0;
-
-    // Reset combo
-    int newCombo = 0;
-
-    // Clear selection if shuffle mode
-    List<CellFragment> newSelected = List<CellFragment>.from(_state!.selectedFragments);
-    if (_state!.level.shuffleOnWrong) {
-      for (var f in newSelected) {
-        final parts = f.id.split('-');
-        final r = int.parse(parts[0]);
-        final c = int.parse(parts[1]);
-        newBoard[r][c] = newBoard[r][c].copyWith(isSelected: false);
-      }
-      newSelected = [];
-    }
-
-    _state = _state!.copyWith(
-      board: newBoard,
-      lives: newLives,
-      score: newScore,
-      comboCount: newCombo,
-      selectedFragments: newSelected,
-    );
-
-    onWrongTap?.call();
-    notifyListeners();
-
-    // Reset animation after delay
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (_state != null) {
-        final resetBoard = _state!.board.map((r) => List<CellFragment>.from(r)).toList();
-        resetBoard[row][col] = resetBoard[row][col].copyWith(isAnimating: false, scale: 1.0);
-        _state = _state!.copyWith(board: resetBoard);
-        notifyListeners();
-      }
-    });
-
-    if (newLives <= 0) {
-      _gameOver();
-    }
-  }
-
-  void _completeLetter() {
-    onBuildComplete?.call();
-    
-    final target = _state!.level.isWord ? _state!.level.target.toUpperCase() : _state!.level.target.toUpperCase();
-    final letters = target.split('');
-    
-    // Mark matched fragments and clear them
-    final newBoard = _state!.board.map((r) => List<CellFragment>.from(r)).toList();
-    for (var fragment in _state!.selectedFragments) {
-      final parts = fragment.id.split('-');
-      final row = int.parse(parts[0]);
-      final col = int.parse(parts[1]);
-      newBoard[row][col] = newBoard[row][col].copyWith(isMatched: true, isSelected: false);
-    }
-
-    _state = _state!.copyWith(
-      board: newBoard,
-      selectedFragments: [],
-      totalMatches: _state!.totalMatches + 1,
-    );
-    notifyListeners();
-
-    // Animate fall after delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _animateAndFillBoard();
-      
-      // Move to next letter if word mode
-      if (_state!.level.isWord) {
-        final newIndex = _state!.currentLetterIndex + 1;
-        if (newIndex < letters.length) {
-          _state = _state!.copyWith(
-            currentLetterIndex: newIndex,
-            currentTarget: letters[newIndex],
-          );
-          notifyListeners();
-        } else {
-          _levelComplete();
-        }
-      } else {
-        _levelComplete();
-      }
+    return List.generate(size, (r) {
+      return List.generate(size, (c) {
+        final s = all2[r * size + c];
+        return CellTile(
+          id: '$r-$c',
+          letter: s.letter,
+          pieceIndex: s.pieceIndex,
+        );
+      });
     });
   }
 
-  void _animateAndFillBoard() {
-    if (_state == null) return;
-
-    final random = Random();
-    final size = _state!.level.gridSize;
-    final newBoard = _state!.board.map((r) => List<CellFragment>.from(r)).toList();
-    final distractorSymbols = ['/', '\\', '|', '-', '_', '(', ')', '<', '>'];
-
-    // Collect current target's required fragments to ensure they're placed
-    final targetFrags = LetterFragments.getFragments(_state!.currentTarget);
-    int targetFragIndex = 0;
-
-    // Remove matched, let others fall, fill top
-    for (int col = 0; col < size; col++) {
-      // Collect non-matched from bottom to top
-      final List<CellFragment> survivors = [];
-      for (int row = size - 1; row >= 0; row--) {
-        if (!newBoard[row][col].isMatched) {
-          survivors.add(newBoard[row][col]);
-        }
+  // ─── Timer ─────────────────────────────────────────────────────────────────
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_state == null || !_state!.isPlaying || _state!.isPaused) return;
+      final t = _state!.timeRemaining - 1;
+      if (t <= 0) {
+        _state = _state!.copyWith(
+          timeRemaining: 0,
+          isPlaying: false,
+          isGameOver: true,
+        );
+        _timer?.cancel();
+      } else {
+        _state = _state!.copyWith(timeRemaining: t);
       }
-
-      // Fill from bottom
-      for (int row = size - 1; row >= 0; row--) {
-        if (survivors.isNotEmpty) {
-          final frag = survivors.removeAt(0);
-          newBoard[row][col] = frag.copyWith(
-            id: '$row-$col',
-            isMatched: false,
-            isSelected: false,
-            isAnimating: false,
-            scale: 1.0,
-          );
-        } else {
-          // Inject required fragments for current target to ensure playability
-          String symbol;
-          if (targetFragIndex < targetFrags.length) {
-            symbol = targetFrags[targetFragIndex];
-            targetFragIndex++;
-          } else {
-            symbol = distractorSymbols[random.nextInt(distractorSymbols.length)];
-          }
-          newBoard[row][col] = CellFragment(
-            id: '$row-$col',
-            symbol: symbol,
-          );
-        }
-      }
-    }
-
-    _state = _state!.copyWith(board: newBoard);
-    notifyListeners();
+      notifyListeners();
+    });
   }
 
-  void _gameOver() {
-    _state = _state!.copyWith(
-      isPlaying: false,
-      isGameOver: true,
-    );
-    onGameOver?.call();
-    notifyListeners();
-  }
+  // ─── Tap handler ───────────────────────────────────────────────────────────
+  void onTileTapped(int row, int col) {
+    final s = _state;
+    if (s == null || !s.isPlaying || s.isPaused) return;
+    final tile = s.board[row][col];
+    if (tile.isCollected) return;
 
-  void _levelComplete() {
-    final timeBonus = _state!.timeRemaining * 5;
-    final livesBonus = _state!.lives * 100;
-    
-    _state = _state!.copyWith(
-      isPlaying: false,
-      isLevelComplete: true,
-      score: _state!.score + timeBonus + livesBonus,
-    );
-    onLevelComplete?.call();
-    notifyListeners();
-  }
+    final isCorrect = tile.letter == s.currentLetter;
 
-  void tickTimer() {
-    if (_state == null || !_state!.isPlaying || _state!.isPaused) return;
-    
-    final newTime = _state!.timeRemaining - 1;
-    _state = _state!.copyWith(timeRemaining: newTime);
-    
-    if (newTime <= 0) {
-      _gameOver();
+    if (isCorrect) {
+      _handleCorrect(row, col, tile);
     } else {
-      notifyListeners();
+      _handleWrong(row, col);
     }
   }
 
-  void pause() {
-    if (_state != null && _state!.isPlaying) {
-      _state = _state!.copyWith(isPaused: true);
-      notifyListeners();
-    }
-  }
+  void _handleCorrect(int row, int col, CellTile tile) {
+    final s = _state!;
 
-  void resume() {
-    if (_state != null && _state!.isPaused) {
-      _state = _state!.copyWith(isPaused: false);
-      notifyListeners();
-    }
-  }
+    // Mark collected
+    final newBoard = s.board
+        .map((r) => List<CellTile>.from(r))
+        .toList();
+    newBoard[row][col] = tile.copyWith(isCollected: true);
 
-  void restart() {
-    if (_state != null) {
-      startLevel(_state!.level);
-    }
-  }
+    // Add piece to build
+    final newBuild = s.letterBuild.withPiece(tile.pieceIndex);
+    final combo = s.comboCount + 1;
+    final pts = (50 + combo * 10).clamp(50, 200);
 
-  void continueWithLives(int bonusLives) {
-    if (_state != null) {
-      _state = _state!.copyWith(
-        lives: _state!.lives + bonusLives,
-        isPlaying: true,
-        isGameOver: false,
+    // Is the current letter now complete?
+    if (newBuild.isComplete) {
+      _onLetterComplete(s, newBoard, combo + 1, pts);
+    } else {
+      _state = s.copyWith(
+        board: newBoard,
+        letterBuild: newBuild,
+        score: s.score + pts,
+        comboCount: combo,
       );
       notifyListeners();
     }
   }
 
-  void disposeState() {
-    _state = null;
+  void _onLetterComplete(
+      GameState s, List<List<CellTile>> board, int combo, int pts) {
+    final wordBonus = 100;
+    final newScore = s.score + pts + wordBonus;
+
+    // Advance within word
+    final word = s.currentWord;
+    final nextLetterIdx = s.letterIndex + 1;
+
+    if (nextLetterIdx >= word.length) {
+      // Word complete — advance to next target
+      final nextTargetIdx = s.targetIndex + 1;
+      if (nextTargetIdx >= s.level.targets.length) {
+        // All 5 done → level complete
+        _timer?.cancel();
+        _state = s.copyWith(
+          board: board,
+          score: newScore,
+          comboCount: 0,
+          isPlaying: false,
+          isLevelComplete: true,
+        );
+      } else {
+        // Next word
+        final nextLetter =
+            s.level.targets[nextTargetIdx][0].toUpperCase();
+        _state = s.copyWith(
+          board: _buildBoard(s.level, nextTargetIdx, 0),
+          letterBuild: LetterBuild(letter: nextLetter),
+          score: newScore,
+          comboCount: 0,
+          targetIndex: nextTargetIdx,
+          letterIndex: 0,
+        );
+      }
+    } else {
+      // Next letter in same word
+      final nextLetter = word[nextLetterIdx].toUpperCase();
+      _state = s.copyWith(
+        board: _buildBoard(s.level, s.targetIndex, nextLetterIdx),
+        letterBuild: LetterBuild(letter: nextLetter),
+        score: newScore,
+        comboCount: 0,
+        letterIndex: nextLetterIdx,
+      );
+    }
+    notifyListeners();
   }
+
+  void _handleWrong(int row, int col) {
+    final s = _state!;
+    final tile = s.board[row][col];
+
+    // Flash shake
+    final newBoard =
+        s.board.map((r) => List<CellTile>.from(r)).toList();
+    newBoard[row][col] = tile.copyWith(isShaking: true);
+
+    final newLives = s.lives - 1;
+    final newCombo = 0;
+
+    if (newLives <= 0) {
+      _timer?.cancel();
+      _state = s.copyWith(
+        board: newBoard,
+        lives: 0,
+        comboCount: newCombo,
+        isPlaying: false,
+        isGameOver: true,
+      );
+    } else {
+      _state = s.copyWith(
+        board: newBoard,
+        lives: newLives,
+        comboCount: newCombo,
+      );
+      // Clear shake after 400ms
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (_state == null) return;
+        final b = _state!.board
+            .map((r) => List<CellTile>.from(r))
+            .toList();
+        b[row][col] = b[row][col].copyWith(isShaking: false);
+        _state = _state!.copyWith(board: b);
+        notifyListeners();
+      });
+    }
+    notifyListeners();
+  }
+
+  // ─── Pause / resume ────────────────────────────────────────────────────────
+  void pause() {
+    if (_state == null || !_state!.isPlaying) return;
+    _state = _state!.copyWith(isPaused: true);
+    notifyListeners();
+  }
+
+  void resume() {
+    if (_state == null || !_state!.isPlaying) return;
+    _state = _state!.copyWith(isPaused: false);
+    notifyListeners();
+  }
+
+  // ─── Hint: pulses all correct tiles ───────────────────────────────────────
+  void useHint() {
+    final s = _state;
+    if (s == null || !s.isPlaying) return;
+
+    final b = s.board.map((r) => List<CellTile>.from(r)).toList();
+    for (int r = 0; r < b.length; r++) {
+      for (int c = 0; c < b[r].length; c++) {
+        if (b[r][c].letter == s.currentLetter && !b[r][c].isCollected) {
+          b[r][c] = b[r][c].copyWith(isPulsing: true);
+        }
+      }
+    }
+    _state = s.copyWith(board: b);
+    notifyListeners();
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (_state == null) return;
+      final b2 = _state!.board
+          .map((r) => r.map((c) => c.copyWith(isPulsing: false)).toList())
+          .toList();
+      _state = _state!.copyWith(board: b2);
+      notifyListeners();
+    });
+  }
+
+  // ─── Add time (rewarded ad) ────────────────────────────────────────────────
+  void addTime(int seconds) {
+    if (_state == null) return;
+    _state = _state!.copyWith(
+      timeRemaining: _state!.timeRemaining + seconds,
+      isPlaying: true,
+      isGameOver: false,
+    );
+    if (!(_state!.isPlaying)) _startTimer();
+    notifyListeners();
+  }
+
+  // ─── Continue after game over (rewarded ad) ────────────────────────────────
+  void continueGame() {
+    if (_state == null) return;
+    _state = _state!.copyWith(
+      lives: 3,
+      timeRemaining: max(30, _state!.timeRemaining),
+      isPlaying: true,
+      isGameOver: false,
+    );
+    _startTimer();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+class _Slot {
+  final String letter;
+  final int pieceIndex;
+  _Slot({required this.letter, required this.pieceIndex});
 }

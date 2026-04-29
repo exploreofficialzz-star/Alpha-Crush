@@ -1,63 +1,140 @@
 class Level {
   final int id;
-  final String target;
-  final bool isWord;
+  final List<String> targets; // 5 words / letters per level
   final int gridSize;
-  final int timeLimit;
+  final int timeLimitSecs;
+  final int maxLives;
   final int starThreshold1;
   final int starThreshold2;
   final int starThreshold3;
-  final bool shuffleOnWrong;
-  final int maxLives;
 
-  Level({
+  const Level({
     required this.id,
-    required this.target,
-    this.isWord = false,
-    this.gridSize = 8,
-    this.timeLimit = 60,
-    this.starThreshold1 = 100,
-    this.starThreshold2 = 250,
-    this.starThreshold3 = 400,
-    this.shuffleOnWrong = false,
+    required this.targets,
+    this.gridSize = 5,
+    this.timeLimitSecs = 90,
     this.maxLives = 3,
+    this.starThreshold1 = 150,
+    this.starThreshold2 = 350,
+    this.starThreshold3 = 550,
   });
 
-  String get displayTarget => isWord ? target : target;
-
-  static List<Level> getAllLevels() {
-    return [
-      // Stage 1: Simple Letters
-      Level(id: 1, target: 'A', gridSize: 6, timeLimit: 45, starThreshold1: 50, starThreshold2: 120, starThreshold3: 200),
-      Level(id: 2, target: 'L', gridSize: 6, timeLimit: 45, starThreshold1: 60, starThreshold2: 140, starThreshold3: 220),
-      Level(id: 3, target: 'T', gridSize: 6, timeLimit: 40, starThreshold1: 70, starThreshold2: 150, starThreshold3: 240),
-      Level(id: 4, target: 'V', gridSize: 6, timeLimit: 40, starThreshold1: 80, starThreshold2: 160, starThreshold3: 260),
-      Level(id: 5, target: 'X', gridSize: 6, timeLimit: 35, starThreshold1: 90, starThreshold2: 180, starThreshold3: 280),
-      
-      // Stage 2: Medium Letters
-      Level(id: 6, target: 'K', gridSize: 7, timeLimit: 50, starThreshold1: 100, starThreshold2: 200, starThreshold3: 320),
-      Level(id: 7, target: 'Y', gridSize: 7, timeLimit: 50, starThreshold1: 110, starThreshold2: 220, starThreshold3: 340),
-      Level(id: 8, target: 'Z', gridSize: 7, timeLimit: 50, starThreshold1: 120, starThreshold2: 240, starThreshold3: 360),
-      Level(id: 9, target: 'H', gridSize: 7, timeLimit: 45, starThreshold1: 130, starThreshold2: 260, starThreshold3: 380, shuffleOnWrong: true),
-      Level(id: 10, target: 'W', gridSize: 7, timeLimit: 45, starThreshold1: 140, starThreshold2: 280, starThreshold3: 400, shuffleOnWrong: true),
-      
-      // Stage 3: Complex Letters
-      Level(id: 11, target: 'M', gridSize: 8, timeLimit: 55, starThreshold1: 150, starThreshold2: 300, starThreshold3: 450),
-      Level(id: 12, target: 'N', gridSize: 8, timeLimit: 55, starThreshold1: 160, starThreshold2: 320, starThreshold3: 480, shuffleOnWrong: true),
-      Level(id: 13, target: 'E', gridSize: 8, timeLimit: 55, starThreshold1: 170, starThreshold2: 340, starThreshold3: 500, shuffleOnWrong: true),
-      Level(id: 14, target: 'F', gridSize: 8, timeLimit: 50, starThreshold1: 180, starThreshold2: 360, starThreshold3: 520, shuffleOnWrong: true),
-      Level(id: 15, target: 'B', gridSize: 8, timeLimit: 50, starThreshold1: 200, starThreshold2: 380, starThreshold3: 550, shuffleOnWrong: true),
-      
-      // Stage 4: Words
-      Level(id: 16, target: 'CAT', isWord: true, gridSize: 8, timeLimit: 90, starThreshold1: 250, starThreshold2: 500, starThreshold3: 750),
-      Level(id: 17, target: 'DOG', isWord: true, gridSize: 8, timeLimit: 90, starThreshold1: 280, starThreshold2: 550, starThreshold3: 800),
-      Level(id: 18, target: 'SUN', isWord: true, gridSize: 8, timeLimit: 85, starThreshold1: 300, starThreshold2: 600, starThreshold3: 900),
-      Level(id: 19, target: 'STAR', isWord: true, gridSize: 8, timeLimit: 100, starThreshold1: 350, starThreshold2: 700, starThreshold3: 1000, shuffleOnWrong: true),
-      Level(id: 20, target: 'MOON', isWord: true, gridSize: 8, timeLimit: 100, starThreshold1: 400, starThreshold2: 800, starThreshold3: 1200, shuffleOnWrong: true),
-    ];
+  String get stageLabel {
+    if (id <= 5) return 'SINGLE LETTERS';
+    if (id <= 10) return '2-LETTER WORDS';
+    if (id <= 15) return '3-LETTER WORDS';
+    return '4-LETTER WORDS';
   }
 
-  static Level getLevel(int id) {
-    return getAllLevels().firstWhere((l) => l.id == id);
-  }
+  static const List<Level> all = [
+    // ── Stage 1: Single letters ──────────────────────────────────
+    Level(
+      id: 1, targets: ['A', 'B', 'C', 'D', 'E'],
+      gridSize: 5, timeLimitSecs: 90, maxLives: 3,
+      starThreshold1: 100, starThreshold2: 250, starThreshold3: 420,
+    ),
+    Level(
+      id: 2, targets: ['F', 'G', 'H', 'I', 'J'],
+      gridSize: 5, timeLimitSecs: 85, maxLives: 3,
+      starThreshold1: 110, starThreshold2: 270, starThreshold3: 440,
+    ),
+    Level(
+      id: 3, targets: ['K', 'L', 'M', 'N', 'O'],
+      gridSize: 5, timeLimitSecs: 80, maxLives: 3,
+      starThreshold1: 120, starThreshold2: 290, starThreshold3: 460,
+    ),
+    Level(
+      id: 4, targets: ['P', 'Q', 'R', 'S', 'T'],
+      gridSize: 5, timeLimitSecs: 75, maxLives: 3,
+      starThreshold1: 130, starThreshold2: 310, starThreshold3: 480,
+    ),
+    Level(
+      id: 5, targets: ['U', 'V', 'W', 'X', 'Y'],
+      gridSize: 5, timeLimitSecs: 70, maxLives: 3,
+      starThreshold1: 140, starThreshold2: 330, starThreshold3: 500,
+    ),
+
+    // ── Stage 2: 2-letter words ──────────────────────────────────
+    Level(
+      id: 6, targets: ['DO', 'GO', 'NO', 'SO', 'TO'],
+      gridSize: 6, timeLimitSecs: 120, maxLives: 3,
+      starThreshold1: 200, starThreshold2: 450, starThreshold3: 700,
+    ),
+    Level(
+      id: 7, targets: ['BE', 'HE', 'ME', 'WE', 'IT'],
+      gridSize: 6, timeLimitSecs: 115, maxLives: 3,
+      starThreshold1: 220, starThreshold2: 470, starThreshold3: 730,
+    ),
+    Level(
+      id: 8, targets: ['IF', 'IS', 'IN', 'UP', 'ON'],
+      gridSize: 6, timeLimitSecs: 110, maxLives: 3,
+      starThreshold1: 240, starThreshold2: 490, starThreshold3: 760,
+    ),
+    Level(
+      id: 9, targets: ['AT', 'AN', 'AS', 'BY', 'MY'],
+      gridSize: 6, timeLimitSecs: 105, maxLives: 3,
+      starThreshold1: 260, starThreshold2: 510, starThreshold3: 790,
+    ),
+    Level(
+      id: 10, targets: ['OR', 'OF', 'HI', 'OH', 'OX'],
+      gridSize: 6, timeLimitSecs: 100, maxLives: 3,
+      starThreshold1: 280, starThreshold2: 530, starThreshold3: 820,
+    ),
+
+    // ── Stage 3: 3-letter words ──────────────────────────────────
+    Level(
+      id: 11, targets: ['CAT', 'DOG', 'SUN', 'RUN', 'FUN'],
+      gridSize: 6, timeLimitSecs: 150, maxLives: 3,
+      starThreshold1: 350, starThreshold2: 700, starThreshold3: 1050,
+    ),
+    Level(
+      id: 12, targets: ['BED', 'SAD', 'MAD', 'DAD', 'HAD'],
+      gridSize: 6, timeLimitSecs: 145, maxLives: 3,
+      starThreshold1: 370, starThreshold2: 730, starThreshold3: 1080,
+    ),
+    Level(
+      id: 13, targets: ['BOX', 'FOX', 'TOP', 'HOP', 'MOP'],
+      gridSize: 7, timeLimitSecs: 140, maxLives: 3,
+      starThreshold1: 390, starThreshold2: 760, starThreshold3: 1110,
+    ),
+    Level(
+      id: 14, targets: ['ARM', 'FAR', 'CAR', 'BAR', 'JAR'],
+      gridSize: 7, timeLimitSecs: 135, maxLives: 3,
+      starThreshold1: 410, starThreshold2: 790, starThreshold3: 1140,
+    ),
+    Level(
+      id: 15, targets: ['FOR', 'AND', 'BUT', 'NOT', 'GET'],
+      gridSize: 7, timeLimitSecs: 130, maxLives: 3,
+      starThreshold1: 430, starThreshold2: 820, starThreshold3: 1170,
+    ),
+
+    // ── Stage 4: 4-letter words ──────────────────────────────────
+    Level(
+      id: 16, targets: ['STAR', 'MOON', 'FIRE', 'WIND', 'RAIN'],
+      gridSize: 7, timeLimitSecs: 180, maxLives: 3,
+      starThreshold1: 500, starThreshold2: 1000, starThreshold3: 1500,
+    ),
+    Level(
+      id: 17, targets: ['BEAR', 'DEAR', 'FEAR', 'GEAR', 'NEAR'],
+      gridSize: 7, timeLimitSecs: 175, maxLives: 3,
+      starThreshold1: 530, starThreshold2: 1050, starThreshold3: 1550,
+    ),
+    Level(
+      id: 18, targets: ['CAKE', 'LAKE', 'MAKE', 'TAKE', 'WAKE'],
+      gridSize: 7, timeLimitSecs: 170, maxLives: 3,
+      starThreshold1: 560, starThreshold2: 1100, starThreshold3: 1600,
+    ),
+    Level(
+      id: 19, targets: ['BOOK', 'COOK', 'HOOK', 'LOOK', 'TOOK'],
+      gridSize: 7, timeLimitSecs: 165, maxLives: 3,
+      starThreshold1: 590, starThreshold2: 1150, starThreshold3: 1650,
+    ),
+    Level(
+      id: 20, targets: ['BLUE', 'CLUE', 'GLUE', 'TRUE', 'FLEW'],
+      gridSize: 8, timeLimitSecs: 160, maxLives: 3,
+      starThreshold1: 620, starThreshold2: 1200, starThreshold3: 1700,
+    ),
+  ];
+
+  static Level byId(int id) => all.firstWhere((l) => l.id == id);
 }

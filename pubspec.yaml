@@ -1,7 +1,7 @@
 name: alpha_crush
-description: A Candy Crush-style word puzzle game where players reconstruct letters from scattered fragments.
+description: Candy-crush style letter building puzzle — rebuild letters, crush levels.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -13,7 +13,6 @@ dependencies:
   google_mobile_ads: ^4.0.0
   audioplayers: ^5.2.1
   shared_preferences: ^2.2.2
-  flutter_launcher_icons: ^0.13.1
   confetti: ^0.7.0
   shimmer: ^3.0.0
 
@@ -24,19 +23,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/images/
-    - assets/sounds/tap.mp3
-    - assets/sounds/correct.mp3
-    - assets/sounds/wrong.mp3
-    - assets/sounds/build_complete.mp3
-    - assets/sounds/combo.mp3
-    - assets/sounds/bgm.mp3
+    - assets/sounds/
 
 flutter_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#9C27B0"
+  adaptive_icon_background: "#1A0533"
   adaptive_icon_foreground: "assets/images/app_icon.png"

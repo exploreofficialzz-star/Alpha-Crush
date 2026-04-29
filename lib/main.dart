@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'splash_screen.dart';
 import 'ads_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Ads
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
   await AdsManager().initialize();
-
   runApp(const AlphaCrushApp());
 }
 
@@ -25,7 +28,7 @@ class AlphaCrushApp extends StatelessWidget {
           seedColor: const Color(0xFF6A11CB),
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF1A1A2E),
+        scaffoldBackgroundColor: const Color(0xFF0D0D1A),
         fontFamily: 'Roboto',
       ),
       home: const SplashScreen(),
