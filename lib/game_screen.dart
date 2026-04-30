@@ -49,6 +49,8 @@ class _GameScreenState extends State<GameScreen>
     SoundManager().pauseBGM();
   }
 
+  int _failsSinceLastAd = 0;
+
   void _onStateChange() {
     if (!mounted) return;
     setState(() {});
@@ -56,6 +58,13 @@ class _GameScreenState extends State<GameScreen>
     if (s == null) return;
 
     if (s.comboCount > 1) _comboCtrl.forward(from: 0);
+
+    // ── Every 2 wrong taps → show interstitial then continue game ──
+    final newFails = _logic.failCount;
+    if (newFails > 0 && newFails != _failsSinceLastAd && newFails % 2 == 0) {
+      _failsSinceLastAd = newFails;
+      AdsManager().showInterstitial(); // no onDismissed — game continues behind it
+    }
 
     if (s.isLevelComplete && !_resultShown) {
       _resultShown = true;
@@ -100,12 +109,9 @@ class _GameScreenState extends State<GameScreen>
     final s = _logic.state!;
     final stars = s.getStars();
     _saveProgress(stars);
-    // Show interstitial on every other level completion (not every single time)
-    if (widget.level.id % 2 == 0) {
-      AdsManager().showInterstitial(onDismissed: () => _showCompleteDialog(s, stars));
-    } else {
-      _showCompleteDialog(s, stars);
-    }
+    // Always show interstitial on level complete — guard in AdsManager prevents stacking
+    AdsManager().showInterstitial(
+        onDismissed: () => _showCompleteDialog(s, stars));
   }
 
   void _showCompleteDialog(GameState s, int stars) {
@@ -132,7 +138,7 @@ class _GameScreenState extends State<GameScreen>
         },
         onReplay: () {
           Navigator.pop(context);
-          setState(() => _resultShown = false);
+          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -153,10 +159,10 @@ class _GameScreenState extends State<GameScreen>
                 AdsManager().showRewarded(
                   onEarned: (_) {
                     _logic.continueGame();
-                    setState(() => _resultShown = false);
+                    setState(() { _resultShown = false; _failsSinceLastAd = 0; });
                   },
                   onFailed: () {
-                    setState(() => _resultShown = false);
+                    setState(() { _resultShown = false; _failsSinceLastAd = 0; });
                     _logic.startLevel(widget.level);
                   },
                 );
@@ -164,7 +170,7 @@ class _GameScreenState extends State<GameScreen>
             : null,
         onReplay: () {
           Navigator.pop(context);
-          setState(() => _resultShown = false);
+          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -184,7 +190,7 @@ class _GameScreenState extends State<GameScreen>
         },
         onReplay: () {
           Navigator.pop(context);
-          setState(() => _resultShown = false);
+          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -607,7 +613,7 @@ class _GameScreenState extends State<GameScreen>
             adBadge: false,
             onTap: () {
               SoundManager().playTap();
-              setState(() => _resultShown = false);
+              setState(() { _resultShown = false; _failsSinceLastAd = 0; });
               _logic.startLevel(widget.level);
             },
           ),
