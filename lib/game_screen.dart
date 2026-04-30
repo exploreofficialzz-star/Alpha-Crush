@@ -45,7 +45,7 @@ class _GameScreenState extends State<GameScreen>
 
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);
-    // Pause menu BGM during gameplay; tap sounds take over
+    // Pause BGM during gameplay — resumeBGM() restores it on dispose
     SoundManager().pauseBGM();
   }
 
