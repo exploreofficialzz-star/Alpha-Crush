@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 2800), () {
       if (!mounted) return;
-      SoundManager().startBGMOnce(); // BGM starts here — after audio is ready
+      SoundManager().startBGM();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
