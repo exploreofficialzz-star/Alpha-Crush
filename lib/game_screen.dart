@@ -16,7 +16,6 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-
 class _GameScreenState extends State<GameScreen>
     with TickerProviderStateMixin {
   late GameLogic _logic;
@@ -46,8 +45,6 @@ class _GameScreenState extends State<GameScreen>
 
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);
-    // Pause menu BGM during gameplay; tap sounds take over
-    SoundManager().pauseBGM();
   }
 
   int _failsSinceLastAd = 0;
@@ -85,8 +82,6 @@ class _GameScreenState extends State<GameScreen>
     _comboCtrl.dispose();
     _heartCtrl.dispose();
     _celebCtrl.dispose();
-    // Resume BGM when returning to home/level select
-    SoundManager().resumeBGM();
     super.dispose();
   }
 
