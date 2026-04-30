@@ -16,8 +16,39 @@ void main() async {
   runApp(const AlphaCrushApp());
 }
 
-class AlphaCrushApp extends StatelessWidget {
+class AlphaCrushApp extends StatefulWidget {
   const AlphaCrushApp({super.key});
+
+  @override
+  State<AlphaCrushApp> createState() => _AlphaCrushAppState();
+}
+
+class _AlphaCrushAppState extends State<AlphaCrushApp>
+    with WidgetsBindingObserver {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Pause BGM when app goes to background; resume when it comes back
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      SoundManager().pauseBGM();
+    } else if (state == AppLifecycleState.resumed) {
+      SoundManager().resumeBGM();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
