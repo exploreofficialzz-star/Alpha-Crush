@@ -31,8 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _btnScale = Tween(begin: 1.0, end: 0.94).animate(
         CurvedAnimation(parent: _btnCtrl, curve: Curves.easeInOut));
     _loadProgress();
-    // Start BGM when home screen loads
-    SoundManager().playBGM();
+    // BGM already started from splash — no need to restart here
   }
 
   Future<void> _loadProgress() async {
@@ -101,9 +100,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       _statChip(Icons.emoji_events_rounded,
                           _highScore.toString(), const Color(0xFFFFD700)),
                       GestureDetector(
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(
-                                builder: (_) => const SettingsScreen())),
+                        onTap: () {
+                          SoundManager().playTap();
+                          Navigator.push(context,
+                              MaterialPageRoute(
+                                  builder: (_) => const SettingsScreen()));
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -192,7 +194,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ScaleTransition(
                   scale: _btnScale,
                   child: GestureDetector(
-                    onTapDown: (_) => _btnCtrl.forward(),
+                    onTapDown: (_) {
+                      _btnCtrl.forward();
+                      SoundManager().playTap();
+                    },
                     onTapUp: (_) {
                       _btnCtrl.reverse();
                       Navigator.push(

@@ -34,32 +34,7 @@ class AdsManager {
   RewardedAd? _rewardedAd;
   bool _interstitialReady = false;
   bool _rewardedReady = false;
-  DateTime? _lastInterstitialShown; // cooldown tracker
-
-  // Minimum gap between interstitial shows: 45 seconds
-  static const _interstitialCooldown = Duration(seconds: 45);
-
-  // ─── Init ──────────────────────────────────────────────────────────────────
-  Future<void> initialize() async {
-    await MobileAds.instance.initialize();
-    _loadInterstitial();
-    _loadRewarded();
-  }
-
-  // ─── Banner ────────────────────────────────────────────────────────────────
-  BannerAd createBanner({
-    required AdSize size,
-    required void Function(Ad, LoadAdError) onError,
-  }) {
-    final banner = BannerAd(
-      adUnitId: _bannerAdUnitId,
-      size: size,
-      request: const AdRequest(),
-      listener: BannerAdListener(onAdFailedToLoad: onError),
-    );
-    banner.load();
-    return banner;
-  }
+  bool _isShowingInterstitial = false; // prevents repeat triggers
 
   // ─── Interstitial ─────────────────────────────────────────────────────────
   void _loadInterstitial() {
@@ -81,13 +56,9 @@ class AdsManager {
   }
 
   void showInterstitial({VoidCallback? onDismissed}) {
-    // Cooldown guard — don't show if shown recently
-    if (_lastInterstitialShown != null) {
-      final elapsed = DateTime.now().difference(_lastInterstitialShown!);
-      if (elapsed < _interstitialCooldown) {
-        onDismissed?.call();
-        return;
-      }
+    // Guard: if one is already on screen, do nothing — just continue
+    if (_isShowingInterstitial) {
+      return;
     }
 
     if (!_interstitialReady || _interstitialAd == null) {
@@ -96,12 +67,13 @@ class AdsManager {
       return;
     }
 
-    _lastInterstitialShown = DateTime.now();
+    _isShowingInterstitial = true;
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitialAd = null;
         _interstitialReady = false;
+        _isShowingInterstitial = false; // unlocked — next trigger allowed
         _loadInterstitial();
         onDismissed?.call();
       },
@@ -109,6 +81,7 @@ class AdsManager {
         ad.dispose();
         _interstitialAd = null;
         _interstitialReady = false;
+        _isShowingInterstitial = false;
         _loadInterstitial();
         onDismissed?.call();
       },

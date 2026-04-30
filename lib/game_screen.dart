@@ -193,13 +193,15 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _useHintWithAd() {
+    SoundManager().playTap();
     AdsManager().showRewarded(
       onEarned: (_) => _logic.useHint(),
-      onFailed: () => _logic.useHint(), // give hint anyway if ad fails
+      onFailed: () => _logic.useHint(),
     );
   }
 
   void _addTimeWithAd() {
+    SoundManager().playTap();
     AdsManager().showRewarded(
       onEarned: (_) => _logic.addTime(30),
       onFailed: () {},
@@ -249,7 +251,10 @@ class _GameScreenState extends State<GameScreen>
         children: [
           // Pause
           GestureDetector(
-            onTap: _showPauseMenu,
+            onTap: () {
+                SoundManager().playTap();
+                _showPauseMenu();
+              },
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -601,6 +606,7 @@ class _GameScreenState extends State<GameScreen>
             color: const Color(0xFF66BB6A),
             adBadge: false,
             onTap: () {
+              SoundManager().playTap();
               setState(() => _resultShown = false);
               _logic.startLevel(widget.level);
             },
@@ -929,7 +935,10 @@ class _LevelCompleteDialog extends StatelessWidget {
   Widget _dialogBtn(
           String label, Color bg, Color fg, VoidCallback onTap) =>
       GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          SoundManager().playTap();
+          onTap();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
@@ -1024,7 +1033,10 @@ class _GameOverDialog extends StatelessWidget {
   Widget _dialogBtn(
           String label, Color bg, Color fg, VoidCallback onTap) =>
       GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          SoundManager().playTap();
+          onTap();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
@@ -1097,7 +1109,10 @@ class _PauseDialog extends StatelessWidget {
   Widget _dialogBtn(
           String label, Color bg, Color fg, VoidCallback onTap) =>
       GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          SoundManager().playTap();
+          onTap();
+        },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),

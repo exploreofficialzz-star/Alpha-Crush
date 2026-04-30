@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models/level.dart';
 import 'game_screen.dart';
 import 'ads_manager.dart';
+import 'sound_manager.dart';
 
 class LevelSelectScreen extends StatefulWidget {
   const LevelSelectScreen({super.key});
@@ -172,7 +173,10 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
                           color: Colors.white70),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        SoundManager().playTap();
+                        Navigator.pop(context);
+                      },
                     ),
                     const Expanded(
                       child: Text('SELECT LEVEL',
@@ -259,7 +263,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
 
   void _onLevelTap(Level level) {
     if (level.id > _unlockedLevel) return;
-    // Interstitial every 5th level tap (not 3rd — less aggressive)
+    SoundManager().playTap();
     if (level.id % 5 == 0) {
       AdsManager()
           .showInterstitial(onDismissed: () => _goToGame(level));

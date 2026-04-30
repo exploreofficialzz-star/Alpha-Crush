@@ -36,7 +36,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
                           color: Colors.white70),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        SoundManager().playTap();
+                        Navigator.pop(context);
+                      },
                     ),
                     const Expanded(
                       child: Text(
@@ -67,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (value) {
                   setState(() {
                     SoundManager().toggleSound();
+                    SoundManager().playTap(); // plays if sound was just turned ON
                   });
                 },
               ),
