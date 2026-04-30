@@ -36,6 +36,28 @@ class AdsManager {
   bool _rewardedReady = false;
   bool _isShowingInterstitial = false; // prevents repeat triggers
 
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  Future<void> initialize() async {
+    await MobileAds.instance.initialize();
+    _loadInterstitial();
+    _loadRewarded();
+  }
+
+  // ─── Banner ────────────────────────────────────────────────────────────────
+  BannerAd createBanner({
+    required AdSize size,
+    required void Function(Ad, LoadAdError) onError,
+  }) {
+    final banner = BannerAd(
+      adUnitId: _bannerAdUnitId,
+      size: size,
+      request: const AdRequest(),
+      listener: BannerAdListener(onAdFailedToLoad: onError),
+    );
+    banner.load();
+    return banner;
+  }
+
   // ─── Interstitial ─────────────────────────────────────────────────────────
   void _loadInterstitial() {
     InterstitialAd.load(
