@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'splash_screen.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
+import 'network_guard.dart';
+import 'overlay_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +15,10 @@ void main() async {
   ));
   await AdsManager().initialize();
   await SoundManager().initialize();
+
+  // Start network monitoring (runs for the lifetime of the app)
+  NetworkGuard().startMonitoring();
+
   runApp(const AlphaCrushApp());
 }
 
@@ -35,10 +41,10 @@ class _AlphaCrushAppState extends State<AlphaCrushApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    NetworkGuard().stopMonitoring();
     super.dispose();
   }
 
-  /// Pause BGM when app goes to background; resume when it comes back
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -47,6 +53,8 @@ class _AlphaCrushAppState extends State<AlphaCrushApp>
       SoundManager().pauseBGM();
     } else if (state == AppLifecycleState.resumed) {
       SoundManager().resumeBGM();
+      // Re-check network when app comes back to foreground
+      NetworkGuard().retryCheck();
     }
   }
 
@@ -64,6 +72,7 @@ class _AlphaCrushAppState extends State<AlphaCrushApp>
         scaffoldBackgroundColor: const Color(0xFF0D0D1A),
         fontFamily: 'Roboto',
       ),
+      builder: (context, child) => OverlayGate(child: child ?? const SizedBox()),
       home: const SplashScreen(),
     );
   }
