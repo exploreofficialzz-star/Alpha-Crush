@@ -5,21 +5,26 @@ import 'package:flutter/foundation.dart';
 
 enum NetworkStatus { online, noConnection, noData }
 
-/// Singleton that monitors network connectivity and actual internet data.
+/// Monitors network connectivity and actual internet data.
 ///
-/// Detection strategy:
-///   1. connectivity_plus — checks whether a network interface is active
-///      (WiFi, mobile, ethernet). No interface = [NetworkStatus.noConnection].
-///   2. Multi-endpoint parallel ping — fires 6 checks simultaneously
-///      (3 DNS lookups + 3 TCP socket probes on port 53).
-///      If ANY single check succeeds within the timeout = [NetworkStatus.online].
-///      If ALL fail = [NetworkStatus.noData] (interface present but no data).
+/// Why HTTP and not DNS/sockets:
+///   DNS lookups and TCP port-53 sockets can "succeed" even with no real
+///   internet — a router or captive portal will intercept and respond.
+///   HTTP requests through dart:io's HttpClient use the same underlying
+///   stack as AdMob, so if ads can load, these probes will also succeed.
+///
+/// Detection flow:
+///   1. connectivity_plus → no interface at all → noConnection immediately.
+///   2. HTTP HEAD to 4 endpoints in parallel (including Android's own
+///      generate_204 check). ANY 2xx/3xx/4xx = online. ALL fail = noData.
+///   3. reportOnline() — AdsManager calls this whenever an ad loads, which
+///      is definitive proof of connectivity and clears any noData state.
 class NetworkGuard extends ChangeNotifier {
   static final NetworkGuard _instance = NetworkGuard._internal();
   factory NetworkGuard() => _instance;
   NetworkGuard._internal();
 
-  NetworkStatus _status = NetworkStatus.online;
+  NetworkStatus _status    = NetworkStatus.online;
   NetworkStatus get status => _status;
 
   bool _checking = false;
@@ -27,33 +32,24 @@ class NetworkGuard extends ChangeNotifier {
   StreamSubscription<List<ConnectivityResult>>? _sub;
   Timer? _pingTimer;
 
-  // ── Endpoints checked in parallel ─────────────────────────────────────────
-  static const List<String> _dnsHosts = [
-    'google.com',
-    'cloudflare.com',
-    'amazon.com',
-  ];
+  static const Duration _probeTimeout  = Duration(seconds: 6);
+  static const Duration _overallTimeout = Duration(seconds: 9);
 
-  /// (host, port) — all well-known DNS servers, port 53 is nearly always open
-  static const List<(String, int)> _tcpEndpoints = [
-    ('8.8.8.8',         53),  // Google Public DNS
-    ('1.1.1.1',         53),  // Cloudflare DNS
-    ('9.9.9.9',         53),  // Quad9 DNS
+  // Android's own connectivity check + 3 reliable fallbacks
+  static const List<String> _endpoints = [
+    'http://connectivitycheck.gstatic.com/generate_204',
+    'http://clients3.google.com/generate_204',
+    'https://www.google.com',
+    'https://www.cloudflare.com',
   ];
-
-  static const Duration _probeTimeout   = Duration(seconds: 5);
-  static const Duration _overallTimeout = Duration(seconds: 7);
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   void startMonitoring() {
     _sub = Connectivity()
         .onConnectivityChanged
         .listen((_) => _check());
-
-    // Periodic heartbeat every 5 s
     _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) => _check());
-
-    _check(); // immediate check on startup
+    _check();
   }
 
   void stopMonitoring() {
@@ -61,17 +57,22 @@ class NetworkGuard extends ChangeNotifier {
     _pingTimer?.cancel();
   }
 
-  Future<void> retryCheck() => _check();
+  Future<void> retryCheck() async {
+    await _check();
+  }
+
+  /// Call this from AdsManager whenever any ad loads successfully.
+  /// Ad loading is definitive proof of internet — clears noData immediately.
+  void reportOnline() => _updateStatus(NetworkStatus.online);
 
   // ── Core check ─────────────────────────────────────────────────────────────
   Future<void> _check() async {
     if (_checking) return;
     _checking = true;
     try {
-      // Step 1 — does any network interface exist?
       final results = await Connectivity().checkConnectivity();
       final hasInterface = results.any((r) =>
-          r == ConnectivityResult.wifi ||
+          r == ConnectivityResult.wifi   ||
           r == ConnectivityResult.mobile ||
           r == ConnectivityResult.ethernet);
 
@@ -80,60 +81,56 @@ class NetworkGuard extends ChangeNotifier {
         return;
       }
 
-      // Step 2 — interface present; verify actual internet data
-      final hasData = await _hasInternetData();
+      final hasData = await _probeParallel();
       _updateStatus(hasData ? NetworkStatus.online : NetworkStatus.noData);
     } finally {
       _checking = false;
     }
   }
 
-  /// Fires all probes simultaneously. Returns true as soon as ANY one succeeds.
-  /// Returns false only if every probe fails or the overall timeout elapses.
-  Future<bool> _hasInternetData() async {
-    final probes = <Future<bool>>[
-      ..._dnsHosts.map(_probeDns),
-      ..._tcpEndpoints.map((ep) => _probeTcp(ep.$1, ep.$2)),
-    ];
-
-    // Race: resolve with true the moment any probe succeeds
+  // ── Parallel HTTP probes ───────────────────────────────────────────────────
+  Future<bool> _probeParallel() async {
     final completer = Completer<bool>();
+    int settled = 0;
+    final total  = _endpoints.length;
 
-    int failed = 0;
-    for (final probe in probes) {
-      probe.then((ok) {
-        if (ok && !completer.isCompleted) completer.complete(true);
-      }).catchError((_) {
-        failed++;
-        if (failed == probes.length && !completer.isCompleted) {
-          completer.complete(false);
+    for (final url in _endpoints) {
+      _probeHttp(url).then((ok) {
+        settled++;
+        if (ok && !completer.isCompleted) {
+          completer.complete(true); // first success → online
+        } else if (!ok && settled == total && !completer.isCompleted) {
+          completer.complete(false); // all failed → no data
         }
       });
     }
 
-    // Safety net — if neither branch fires within the overall timeout → no data
-    return completer.future
-        .timeout(_overallTimeout, onTimeout: () => false);
+    return completer.future.timeout(_overallTimeout, onTimeout: () => false);
   }
 
-  Future<bool> _probeDns(String host) async {
+  Future<bool> _probeHttp(String url) async {
+    HttpClient? client;
     try {
-      final result =
-          await InternetAddress.lookup(host).timeout(_probeTimeout);
-      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
+      client = HttpClient()
+        ..connectionTimeout = _probeTimeout
+        ..badCertificateCallback = (_, __, ___) => true; // don't block on cert
 
-  Future<bool> _probeTcp(String host, int port) async {
-    try {
-      final socket =
-          await Socket.connect(host, port, timeout: _probeTimeout);
-      socket.destroy();
+      final uri     = Uri.parse(url);
+      final request = await client
+          .headUrl(uri)
+          .timeout(_probeTimeout);
+
+      request.headers.set('Cache-Control', 'no-cache');
+      request.headers.set('User-Agent',    'Mozilla/5.0 AlphaCrush/1.0');
+
+      final response = await request.close().timeout(_probeTimeout);
+      await response.drain<void>(); // consume body so socket is released
+      // Any HTTP response at all = we reached the server = internet works
       return true;
     } catch (_) {
       return false;
+    } finally {
+      client?.close(force: true);
     }
   }
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'network_guard.dart';
 
 /// Production AdMob IDs for Alpha Crush (Android).
 /// iOS IDs are placeholders — update before enabling iOS builds.
@@ -93,7 +94,7 @@ class AdsManager extends ChangeNotifier {
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => _recordAdSuccess('banner'),
+        onAdLoaded: (_) { _recordAdSuccess('banner'); NetworkGuard().reportOnline(); },
         onAdFailedToLoad: (ad, error) {
           _recordAdFailure('banner');
           onError(ad, error);
@@ -114,6 +115,7 @@ class AdsManager extends ChangeNotifier {
           _interstitialAd    = ad;
           _interstitialReady = true;
           _recordAdSuccess('interstitial');
+          NetworkGuard().reportOnline();
           ad.setImmersiveMode(true);
         },
         onAdFailedToLoad: (_) {
@@ -233,6 +235,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       listener: BannerAdListener(
         onAdLoaded: (_) {
           AdsManager()._recordAdSuccess('banner');
+          NetworkGuard().reportOnline();
           if (mounted) setState(() => _loaded = true);
         },
         onAdFailedToLoad: (_, __) {
