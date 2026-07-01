@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'level_select_screen.dart';
 import 'settings_screen.dart';
 import 'game_screen.dart';
-import 'models/level.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
 import 'currency_manager.dart';
