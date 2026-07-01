@@ -10,10 +10,13 @@ import 'letter_fragments.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
 import 'currency_manager.dart';
+import 'daily_challenge_manager.dart';
 
 class GameScreen extends StatefulWidget {
   final Level level;
-  const GameScreen({super.key, required this.level});
+  final bool isDailyChallenge;
+  const GameScreen(
+      {super.key, required this.level, this.isDailyChallenge = false});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -25,7 +28,9 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _comboCtrl;
   late AnimationController _heartCtrl;
   late AnimationController _celebCtrl;
+  late AnimationController _screenPunchCtrl;
   late Animation<double> _comboScale;
+  late Animation<double> _screenPunchAnim;
   late ConfettiController _confettiCtrl;
 
   bool _resultShown = false;
@@ -41,6 +46,8 @@ class _GameScreenState extends State<GameScreen>
         vsync: this, duration: const Duration(milliseconds: 300));
     _celebCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
+    _screenPunchCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 380));
     _confettiCtrl = ConfettiController(duration: const Duration(milliseconds: 900));
 
     _comboScale = TweenSequence([
@@ -48,11 +55,28 @@ class _GameScreenState extends State<GameScreen>
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _comboCtrl, curve: Curves.easeInOut));
 
+    _screenPunchAnim = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 75),
+    ]).animate(CurvedAnimation(parent: _screenPunchCtrl, curve: Curves.easeOut));
+
     _logic.addListener(_onStateChange);
     _logic.startLevel(widget.level);
   }
 
   int _lastTargetIndex = 0;
+  int _lastComboSeen = 0;
+
+  /// Escalation tier for the current combo count:
+  /// 0 = no combo · 1 = combo 2-4 · 2 = combo 5-7 · 3 = combo 8+
+  /// Used to scale punch intensity, flash color, and badge styling so the
+  /// feedback visibly ramps up rather than looking identical at x2 and x9.
+  static int _comboTier(int combo) {
+    if (combo >= 8) return 3;
+    if (combo >= 5) return 2;
+    if (combo >= 2) return 1;
+    return 0;
+  }
 
   void _onStateChange() {
     if (!mounted) return;
@@ -61,6 +85,17 @@ class _GameScreenState extends State<GameScreen>
     if (s == null) return;
 
     if (s.comboCount > 1) _comboCtrl.forward(from: 0);
+
+    // ── Combo milestones (5, 8, 11...) → full-screen punch flash ───────
+    // comboCount only ever changes by exactly ±(itself, via reset to 0) or
+    // +1 per event, so this fires exactly once per upward crossing — no
+    // extra dedup bookkeeping needed.
+    if (s.comboCount > _lastComboSeen &&
+        s.comboCount >= 5 &&
+        (s.comboCount - 5) % 3 == 0) {
+      _screenPunchCtrl.forward(from: 0);
+    }
+    _lastComboSeen = s.comboCount;
 
     // ── Word complete mid-level → confetti burst ──────────────────────
     // (haptics for this already fire from GameLogic itself; this is just
@@ -89,6 +124,7 @@ class _GameScreenState extends State<GameScreen>
     _comboCtrl.dispose();
     _heartCtrl.dispose();
     _celebCtrl.dispose();
+    _screenPunchCtrl.dispose();
     _confettiCtrl.dispose();
     super.dispose();
   }
@@ -115,6 +151,14 @@ class _GameScreenState extends State<GameScreen>
     _saveProgress(stars);
     final coinsEarned =
         await CurrencyManager().awardForLevelComplete(stars: stars);
+    // Daily Challenge bonus stacks on top of the normal level-complete
+    // payout above — claimCompletion() itself is the guard against double
+    // claims (returns 0 if today's already been claimed), so this is safe
+    // to call every time a daily-challenge run finishes.
+    int dailyBonus = 0;
+    if (widget.isDailyChallenge) {
+      dailyBonus = await DailyChallengeManager().claimCompletion();
+    }
     if (!mounted) return;
     // New-user grace: skip interstitials entirely for the first two levels
     // of a fresh install (per AdMob's own guidance: avoid aggressive
@@ -123,13 +167,15 @@ class _GameScreenState extends State<GameScreen>
     // for everyone after that — never two in a row, never stacked.
     if (widget.level.id > 2) {
       AdsManager().showInterstitial(
-          onDismissed: () => _showCompleteDialog(s, stars, coinsEarned));
+          onDismissed: () =>
+              _showCompleteDialog(s, stars, coinsEarned, dailyBonus));
     } else {
-      _showCompleteDialog(s, stars, coinsEarned);
+      _showCompleteDialog(s, stars, coinsEarned, dailyBonus);
     }
   }
 
-  void _showCompleteDialog(GameState s, int stars, int coinsEarned) {
+  void _showCompleteDialog(
+      GameState s, int stars, int coinsEarned, int dailyBonus) {
     if (!mounted) return;
     showDialog(
       context: context,
@@ -138,6 +184,8 @@ class _GameScreenState extends State<GameScreen>
         score: s.score,
         stars: stars,
         coinsEarned: coinsEarned,
+        dailyBonus: dailyBonus,
+        isDailyChallenge: widget.isDailyChallenge,
         level: widget.level,
         onNext: () {
           Navigator.pop(context);
@@ -414,6 +462,44 @@ class _GameScreenState extends State<GameScreen>
                   const BannerAdWidget(),
                 ],
               ),
+              // ── Combo-milestone screen punch (fires at x5, x8, x11...) ──
+              // A quick full-screen radial flash — color and intensity
+              // escalate with combo tier so a x8 run visibly hits harder
+              // than a x5 run, not just a bigger number in the corner.
+              // Positioned.fill must be the direct Stack child — wrapping
+              // it inside IgnorePointer/AnimatedBuilder instead throws
+              // "Incorrect use of ParentDataWidget" at runtime, so those
+              // go INSIDE it here, not around it.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _screenPunchAnim,
+                    builder: (_, __) {
+                      final v = _screenPunchAnim.value;
+                      if (v <= 0.0) return const SizedBox.shrink();
+                      final tier = _comboTier(s.comboCount);
+                      final flashColor = tier >= 3
+                          ? const Color(0xFFE53935) // red-hot at x8+
+                          : const Color(0xFFFFD700); // gold at x5-x7
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: Alignment.center,
+                            radius: 1.1,
+                            colors: [
+                              flashColor.withOpacity(0.0),
+                              flashColor.withOpacity(0.0),
+                              flashColor.withOpacity(
+                                  (tier >= 3 ? 0.30 : 0.18) * v),
+                            ],
+                            stops: const [0.0, 0.55, 1.0],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
               // ── Celebration confetti — fires on every word complete and
               // again on full level complete (see _onStateChange). ──
               Align(
@@ -489,29 +575,66 @@ class _GameScreenState extends State<GameScreen>
                           letterSpacing: 2)),
                   AnimatedBuilder(
                     animation: _comboScale,
-                    builder: (_, __) => Transform.scale(
-                      scale: _comboScale.value,
-                      child: Text('${s.score}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900)),
-                    ),
+                    builder: (_, __) {
+                      // Punch intensity escalates with tier: tier1 keeps
+                      // the original 1.5x max untouched; tier2/tier3 punch
+                      // progressively harder so a x8 run visibly reads as
+                      // bigger than a x2 run, not just a louder number.
+                      final tier = _comboTier(s.comboCount);
+                      final tierMult = tier >= 3 ? 1.6 : (tier == 2 ? 1.25 : 1.0);
+                      final punch = 1.0 + (_comboScale.value - 1.0) * tierMult;
+                      return Transform.scale(
+                        scale: punch,
+                        child: Text('${s.score}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900)),
+                      );
+                    },
                   ),
                   if (s.comboCount > 1)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: const Color(0xFFFFD700).withOpacity(0.25),
-                      ),
-                      child: Text('x${s.comboCount}',
-                          style: const TextStyle(
-                              color: Color(0xFFFFD700),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900)),
-                    )
+                    Builder(builder: (_) {
+                      final tier = _comboTier(s.comboCount);
+                      final badgeColors = tier >= 3
+                          ? [const Color(0xFFE53935), const Color(0xFF9C27B0)]
+                          : tier == 2
+                              ? [const Color(0xFFFF7043), const Color(0xFFFFD700)]
+                              : [const Color(0xFFFFD700), const Color(0xFFFFD700)];
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: LinearGradient(colors: [
+                            badgeColors[0].withOpacity(0.30),
+                            badgeColors[1].withOpacity(0.30),
+                          ]),
+                          border: tier >= 2
+                              ? Border.all(
+                                  color: badgeColors[0].withOpacity(0.6),
+                                  width: 1)
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (tier >= 3) ...[
+                              const Icon(Icons.local_fire_department_rounded,
+                                  color: Colors.white, size: 12),
+                              const SizedBox(width: 2),
+                            ],
+                            Text('x${s.comboCount}',
+                                style: TextStyle(
+                                    color: tier >= 2
+                                        ? Colors.white
+                                        : const Color(0xFFFFD700),
+                                    fontSize: tier >= 3 ? 14 : 13,
+                                    fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                      );
+                    })
                   else
                     const SizedBox(width: 30),
                 ],
@@ -820,7 +943,7 @@ class _GameScreenState extends State<GameScreen>
 }
 
 // ─── Board cell ───────────────────────────────────────────────────────────────
-class _BoardCell extends StatelessWidget {
+class _BoardCell extends StatefulWidget {
   final CellTile tile;
   final double size;
   final String currentLetter;
@@ -834,11 +957,22 @@ class _BoardCell extends StatelessWidget {
   });
 
   @override
+  State<_BoardCell> createState() => _BoardCellState();
+}
+
+class _BoardCellState extends State<_BoardCell> {
+  // Purely local, purely visual — doesn't touch GameLogic/CellTile at all.
+  // A quick squash-on-press-and-release makes every single tap feel more
+  // physical, not just the ones that happen to land on a correct letter.
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final tile = widget.tile;
     if (tile.isCollected) {
       return SizedBox(
-        width: size,
-        height: size,
+        width: widget.size,
+        height: widget.size,
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
@@ -849,57 +983,67 @@ class _BoardCell extends StatelessWidget {
       );
     }
 
-    final isTarget = tile.letter == currentLetter;
+    final isTarget = tile.letter == widget.currentLetter;
     final color = tile.color;
 
     return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(2.5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withOpacity(tile.isShaking ? 1.0 : 0.85),
-                color.withOpacity(tile.isShaking ? 0.6 : 0.60),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.87 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(tile.isShaking ? 1.0 : 0.85),
+                  color.withOpacity(tile.isShaking ? 0.6 : 0.60),
+                ],
+              ),
+              border: tile.isPulsing
+                  ? Border.all(color: Colors.white, width: 2.5)
+                  : isTarget
+                      ? Border.all(
+                          color: Colors.white.withOpacity(0.35), width: 1.0)
+                      : null,
+              boxShadow: [
+                BoxShadow(
+                  color: tile.isShaking
+                      ? Colors.white.withOpacity(0.4)
+                      : tile.isPulsing
+                          ? Colors.white.withOpacity(0.3)
+                          : color.withOpacity(0.30),
+                  blurRadius: tile.isShaking || tile.isPulsing ? 14 : 6,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
-            border: tile.isPulsing
-                ? Border.all(color: Colors.white, width: 2.5)
-                : isTarget
-                    ? Border.all(
-                        color: Colors.white.withOpacity(0.35), width: 1.0)
-                    : null,
-            boxShadow: [
-              BoxShadow(
-                color: tile.isShaking
-                    ? Colors.white.withOpacity(0.4)
-                    : tile.isPulsing
-                        ? Colors.white.withOpacity(0.3)
-                        : color.withOpacity(0.30),
-                blurRadius: tile.isShaking || tile.isPulsing ? 14 : 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          transform: tile.isShaking
-              ? (Matrix4.identity()
-                ..translate(
-                    math.Random().nextDouble() * 4 - 2, 0))
-              : Matrix4.identity(),
-          child: Center(
-            child: CustomPaint(
-              size: Size(size * 0.58, size * 0.58),
-              painter: PiecePainter(
-                letter: tile.letter,
-                pieceIndex: tile.pieceIndex,
-                color: color,
+            transform: tile.isShaking
+                ? (Matrix4.identity()
+                  ..translate(
+                      math.Random().nextDouble() * 4 - 2, 0))
+                : Matrix4.identity(),
+            child: Center(
+              child: CustomPaint(
+                size: Size(widget.size * 0.58, widget.size * 0.58),
+                painter: PiecePainter(
+                  letter: tile.letter,
+                  pieceIndex: tile.pieceIndex,
+                  color: color,
+                ),
               ),
             ),
           ),
@@ -1046,6 +1190,8 @@ class _LevelCompleteDialog extends StatelessWidget {
   final int score;
   final int stars;
   final int coinsEarned;
+  final int dailyBonus;
+  final bool isDailyChallenge;
   final Level level;
   final VoidCallback onNext;
   final VoidCallback onReplay;
@@ -1055,6 +1201,8 @@ class _LevelCompleteDialog extends StatelessWidget {
     required this.score,
     required this.stars,
     required this.coinsEarned,
+    this.dailyBonus = 0,
+    this.isDailyChallenge = false,
     required this.level,
     required this.onNext,
     required this.onReplay,
@@ -1080,12 +1228,14 @@ class _LevelCompleteDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('LEVEL COMPLETE!',
-                style: TextStyle(
+            Text(
+                isDailyChallenge ? 'DAILY CHALLENGE COMPLETE!' : 'LEVEL COMPLETE!',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 3)),
+                    letterSpacing: 2)),
             const SizedBox(height: 16),
             // Stars
             Row(
@@ -1134,12 +1284,44 @@ class _LevelCompleteDialog extends StatelessWidget {
                 ],
               ),
             ),
+            if (dailyBonus > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF7043), Color(0xFFE53935)],
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded,
+                        color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Text('DAILY BONUS +$dailyBonus',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5)),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 22),
             // Buttons
-            if (level.id < 20)
+            // Daily-challenge runs are a bonus replay, not campaign
+            // progression — "Next Level" would imply continuing past a
+            // level the player may not have actually reached yet, so it's
+            // suppressed here in favor of just Replay/Home.
+            if (!isDailyChallenge && level.id < 20)
               _dialogBtn('NEXT LEVEL', const Color(0xFFFFD700),
                   Colors.black, onNext),
-            const SizedBox(height: 10),
+            if (!isDailyChallenge && level.id < 20)
+              const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(

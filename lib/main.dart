@@ -7,6 +7,8 @@ import 'network_guard.dart';
 import 'overlay_gate.dart';
 import 'currency_manager.dart';
 import 'daily_reward_manager.dart';
+import 'daily_challenge_manager.dart';
+import 'iap_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,8 @@ void main() async {
   await SoundManager().initialize();
   await CurrencyManager().initialize();
   await DailyRewardManager().initialize();
+  await DailyChallengeManager().initialize();
+  await IapManager().initialize();
 
   // Start network monitoring (runs for the lifetime of the app)
   NetworkGuard().startMonitoring();

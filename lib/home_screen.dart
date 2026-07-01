@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'level_select_screen.dart';
 import 'settings_screen.dart';
+import 'game_screen.dart';
+import 'models/level.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
 import 'currency_manager.dart';
 import 'daily_reward_manager.dart';
+import 'daily_challenge_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,6 +66,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         },
       ),
     );
+  }
+
+  void _onDailyChallengeTap() async {
+    SoundManager().playTap();
+    final level =
+        DailyChallengeManager().todaysLevel(unlockedLevel: _unlockedLevel);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GameScreen(level: level, isDailyChallenge: true),
+      ),
+    );
+    // isCompletedToday is read live in build(), not cached — a plain
+    // rebuild after returning is enough to flip the card to its
+    // "come back tomorrow" state, no persistent listener needed.
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadProgress() async {
@@ -171,6 +190,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           const Color(0xFFFF7043)),
                     ],
                   ],
+                ),
+
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _dailyChallengeCard(),
                 ),
 
                 const Spacer(),
@@ -291,6 +316,77 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _dailyChallengeCard() {
+    final completed = DailyChallengeManager().isCompletedToday;
+    return GestureDetector(
+      onTap: _onDailyChallengeTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: completed
+                ? [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.06)]
+                : [const Color(0xFFFF7043).withOpacity(0.30),
+                   const Color(0xFFE53935).withOpacity(0.20)],
+          ),
+          border: Border.all(
+              color: completed
+                  ? Colors.white.withOpacity(0.10)
+                  : const Color(0xFFFF7043).withOpacity(0.5),
+              width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: (completed
+                        ? Colors.white
+                        : const Color(0xFFFF7043))
+                    .withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                completed
+                    ? Icons.check_circle_rounded
+                    : Icons.local_fire_department_rounded,
+                color: completed ? Colors.white54 : const Color(0xFFFF7043),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Daily Challenge',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: completed ? Colors.white54 : Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(
+                      completed
+                          ? 'Come back tomorrow!'
+                          : 'Bonus level · +${DailyChallengeManager.bonusCoins} coins',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: completed
+                              ? Colors.white30
+                              : Colors.white.withOpacity(0.65))),
+                ],
+              ),
+            ),
+            if (!completed)
+              const Icon(Icons.chevron_right_rounded,
+                  color: Colors.white38, size: 22),
+          ],
+        ),
       ),
     );
   }

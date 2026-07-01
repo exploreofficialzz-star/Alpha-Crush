@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'network_guard.dart';
 
 /// Production AdMob IDs for Alpha Crush (Android).
@@ -46,6 +47,20 @@ class AdsManager extends ChangeNotifier {
   static const int _blockThreshold = 3;
 
   bool get adsBlocked => _adsBlocked;
+
+  // ── Remove Ads (IAP) ────────────────────────────────────────────────────
+  // The persisted flag itself is owned by IapManager (one source of truth);
+  // this is just the in-memory gate that showInterstitial() and
+  // BannerAdWidget check on every call, so a purchase takes effect
+  // instantly everywhere without needing a screen rebuild/navigation.
+  bool _adsRemoved = false;
+  bool get adsRemoved => _adsRemoved;
+
+  void setAdsRemoved(bool removed) {
+    if (_adsRemoved == removed) return;
+    _adsRemoved = removed;
+    notifyListeners();
+  }
 
   void _recordAdFailure(String type) {
     if (type == 'banner')       _bannerFailCount++;
@@ -147,6 +162,10 @@ class AdsManager extends ChangeNotifier {
     VoidCallback? onDismissed,
     bool ignoreCooldown = false,
   }) {
+    if (_adsRemoved) {
+      onDismissed?.call();
+      return;
+    }
     if (_isShowingInterstitial) return;
     if (!ignoreCooldown && !_cooldownElapsed) {
       // Too soon since the last interstitial — skip silently and let the
@@ -254,6 +273,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
+    if (AdsManager().adsRemoved) return; // no ad requested at all
     _banner = BannerAd(
       adUnitId: AdsManager._bannerAdUnitId,
       size: AdSize.banner,
@@ -281,11 +301,17 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded || _banner == null) return const SizedBox(height: 50);
-    return SizedBox(
-      height: _banner!.size.height.toDouble(),
-      width:  _banner!.size.width.toDouble(),
-      child: AdWidget(ad: _banner!),
+    return AnimatedBuilder(
+      animation: AdsManager(),
+      builder: (_, __) {
+        if (AdsManager().adsRemoved) return const SizedBox.shrink();
+        if (!_loaded || _banner == null) return const SizedBox(height: 50);
+        return SizedBox(
+          height: _banner!.size.height.toDouble(),
+          width:  _banner!.size.width.toDouble(),
+          child: AdWidget(ad: _banner!),
+        );
+      },
     );
   }
 }
