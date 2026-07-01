@@ -16,7 +16,7 @@ dependencies:
   confetti: ^0.7.0
   shimmer: ^3.0.0
   connectivity_plus: ^6.0.0
-  in_app_purchase: ^3.2.3
+  in_app_purchase: ^3.1.13
 
 dev_dependencies:
   flutter_test:
