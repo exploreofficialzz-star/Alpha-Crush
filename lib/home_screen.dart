@@ -5,6 +5,8 @@ import 'level_select_screen.dart';
 import 'settings_screen.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
+import 'currency_manager.dart';
+import 'daily_reward_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _btnScale;
   int _highScore = 0;
   int _unlockedLevel = 1;
+  int _coins = 0;
 
   @override
   void initState() {
@@ -30,8 +33,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 150));
     _btnScale = Tween(begin: 1.0, end: 0.94).animate(
         CurvedAnimation(parent: _btnCtrl, curve: Curves.easeInOut));
+    _coins = CurrencyManager().balance;
+    CurrencyManager().addListener(_onCoinsChanged);
     _loadProgress();
     // BGM already started from splash — no need to restart here
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowDailyReward());
+  }
+
+  void _onCoinsChanged() {
+    if (!mounted) return;
+    setState(() => _coins = CurrencyManager().balance);
+  }
+
+  void _maybeShowDailyReward() {
+    if (!mounted) return;
+    if (!DailyRewardManager().canClaimToday) return;
+    final previewDay = DailyRewardManager().nextStreakDay;
+    final reward = DailyRewardManager().rewardFor(previewDay);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _DailyRewardDialog(
+        day: previewDay,
+        reward: reward,
+        onClaim: () async {
+          SoundManager().playTap();
+          await DailyRewardManager().claimToday();
+          if (mounted) Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   Future<void> _loadProgress() async {
@@ -45,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    CurrencyManager().removeListener(_onCoinsChanged);
     _bgCtrl.dispose();
     _btnCtrl.dispose();
     super.dispose();
@@ -123,6 +155,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           'LVL $_unlockedLevel', const Color(0xFF64B5F6)),
                     ],
                   ),
+                ),
+
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _statChip(Icons.monetization_on_rounded, '$_coins',
+                        const Color(0xFFFFD700)),
+                    if (DailyRewardManager().streakDay > 0) ...[
+                      const SizedBox(width: 10),
+                      _statChip(
+                          Icons.local_fire_department_rounded,
+                          '${DailyRewardManager().streakDay}',
+                          const Color(0xFFFF7043)),
+                    ],
+                  ],
                 ),
 
                 const Spacer(),
@@ -359,6 +407,122 @@ class _BgTile extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Daily login reward dialog ───────────────────────────────────────────────
+class _DailyRewardDialog extends StatelessWidget {
+  final int day; // raw streak count (can exceed 7 — shown as "DAY 12" etc.)
+  final int reward;
+  final VoidCallback onClaim;
+
+  const _DailyRewardDialog({
+    required this.day,
+    required this.reward,
+    required this.onClaim,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cyclePos = ((day - 1) % 7) + 1; // 1-7, position within this week
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1A0A2E), Color(0xFF0D1A33)],
+          ),
+          border: Border.all(
+              color: const Color(0xFFFFD700).withOpacity(0.5), width: 1.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.local_fire_department_rounded,
+                color: Color(0xFFFF7043), size: 36),
+            const SizedBox(height: 6),
+            Text('DAY $day STREAK',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2)),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(7, (i) {
+                final pipDay = i + 1;
+                final isToday = pipDay == cyclePos;
+                final isPast = pipDay < cyclePos;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: isToday ? 14 : 10,
+                  height: isToday ? 14 : 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isToday
+                        ? const Color(0xFFFFD700)
+                        : isPast
+                            ? const Color(0xFFFFD700).withOpacity(0.5)
+                            : Colors.white.withOpacity(0.15),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFFFFD700).withOpacity(0.12),
+                border: Border.all(
+                    color: const Color(0xFFFFD700).withOpacity(0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.monetization_on_rounded,
+                      color: Color(0xFFFFD700), size: 22),
+                  const SizedBox(width: 8),
+                  Text('+$reward',
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+            GestureDetector(
+              onTap: onClaim,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                  ),
+                ),
+                child: const Center(
+                  child: Text('CLAIM',
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

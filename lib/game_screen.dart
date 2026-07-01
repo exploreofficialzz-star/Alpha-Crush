@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:confetti/confetti.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'game_logic.dart';
 import 'models/level.dart';
@@ -7,6 +9,7 @@ import 'models/game_state.dart';
 import 'letter_fragments.dart';
 import 'ads_manager.dart';
 import 'sound_manager.dart';
+import 'currency_manager.dart';
 
 class GameScreen extends StatefulWidget {
   final Level level;
@@ -23,6 +26,7 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _heartCtrl;
   late AnimationController _celebCtrl;
   late Animation<double> _comboScale;
+  late ConfettiController _confettiCtrl;
 
   bool _resultShown = false;
 
@@ -37,6 +41,7 @@ class _GameScreenState extends State<GameScreen>
         vsync: this, duration: const Duration(milliseconds: 300));
     _celebCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
+    _confettiCtrl = ConfettiController(duration: const Duration(milliseconds: 900));
 
     _comboScale = TweenSequence([
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.5), weight: 50),
@@ -47,7 +52,7 @@ class _GameScreenState extends State<GameScreen>
     _logic.startLevel(widget.level);
   }
 
-  int _failsSinceLastAd = 0;
+  int _lastTargetIndex = 0;
 
   void _onStateChange() {
     if (!mounted) return;
@@ -57,16 +62,18 @@ class _GameScreenState extends State<GameScreen>
 
     if (s.comboCount > 1) _comboCtrl.forward(from: 0);
 
-    // ── Every 2 wrong taps → show interstitial then continue game ──
-    final newFails = _logic.failCount;
-    if (newFails > 0 && newFails != _failsSinceLastAd && newFails % 2 == 0) {
-      _failsSinceLastAd = newFails;
-      AdsManager().showInterstitial(); // no onDismissed — game continues behind it
+    // ── Word complete mid-level → confetti burst ──────────────────────
+    // (haptics for this already fire from GameLogic itself; this is just
+    // the visual payoff, which needs a BuildContext so it lives here.)
+    if (s.targetIndex > _lastTargetIndex && !s.isLevelComplete) {
+      _lastTargetIndex = s.targetIndex;
+      _confettiCtrl.play();
     }
 
     if (s.isLevelComplete && !_resultShown) {
       _resultShown = true;
       _celebCtrl.forward(from: 0);
+      _confettiCtrl.play();
       Future.delayed(const Duration(milliseconds: 800), _showLevelComplete);
     }
     if (s.isGameOver && !_resultShown) {
@@ -82,6 +89,7 @@ class _GameScreenState extends State<GameScreen>
     _comboCtrl.dispose();
     _heartCtrl.dispose();
     _celebCtrl.dispose();
+    _confettiCtrl.dispose();
     super.dispose();
   }
 
@@ -101,16 +109,27 @@ class _GameScreenState extends State<GameScreen>
   }
 
   // ─── Result dialogs ───────────────────────────────────────────────────────
-  void _showLevelComplete() {
+  void _showLevelComplete() async {
     final s = _logic.state!;
     final stars = s.getStars();
     _saveProgress(stars);
-    // Always show interstitial on level complete — guard in AdsManager prevents stacking
-    AdsManager().showInterstitial(
-        onDismissed: () => _showCompleteDialog(s, stars));
+    final coinsEarned =
+        await CurrencyManager().awardForLevelComplete(stars: stars);
+    if (!mounted) return;
+    // New-user grace: skip interstitials entirely for the first two levels
+    // of a fresh install (per AdMob's own guidance: avoid aggressive
+    // monetization before a player has had a chance to enjoy the game).
+    // AdsManager's own cooldown then keeps it to roughly once per ~2 min
+    // for everyone after that — never two in a row, never stacked.
+    if (widget.level.id > 2) {
+      AdsManager().showInterstitial(
+          onDismissed: () => _showCompleteDialog(s, stars, coinsEarned));
+    } else {
+      _showCompleteDialog(s, stars, coinsEarned);
+    }
   }
 
-  void _showCompleteDialog(GameState s, int stars) {
+  void _showCompleteDialog(GameState s, int stars, int coinsEarned) {
     if (!mounted) return;
     showDialog(
       context: context,
@@ -118,6 +137,7 @@ class _GameScreenState extends State<GameScreen>
       builder: (_) => _LevelCompleteDialog(
         score: s.score,
         stars: stars,
+        coinsEarned: coinsEarned,
         level: widget.level,
         onNext: () {
           Navigator.pop(context);
@@ -134,7 +154,7 @@ class _GameScreenState extends State<GameScreen>
         },
         onReplay: () {
           Navigator.pop(context);
-          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+          setState(() { _resultShown = false; _lastTargetIndex = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -155,10 +175,10 @@ class _GameScreenState extends State<GameScreen>
                 AdsManager().showRewarded(
                   onEarned: (_) {
                     _logic.continueGame();
-                    setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+                    setState(() { _resultShown = false; _lastTargetIndex = 0; });
                   },
                   onFailed: () {
-                    setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+                    setState(() { _resultShown = false; _lastTargetIndex = 0; });
                     _logic.startLevel(widget.level);
                   },
                 );
@@ -166,7 +186,7 @@ class _GameScreenState extends State<GameScreen>
             : null,
         onReplay: () {
           Navigator.pop(context);
-          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+          setState(() { _resultShown = false; _lastTargetIndex = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -186,7 +206,7 @@ class _GameScreenState extends State<GameScreen>
         },
         onReplay: () {
           Navigator.pop(context);
-          setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+          setState(() { _resultShown = false; _lastTargetIndex = 0; });
           _logic.startLevel(widget.level);
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
@@ -210,6 +230,158 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  // ── Dual-path boosters: watch an ad, or spend banked coins ─────────────
+  // This is the coin sink that closes the loop on the whole currency system
+  // — without it, coins earned from levels and the daily streak have
+  // nowhere to go, which makes both feel pointless. Ads stay the default,
+  // revenue-generating path; coins are the escape valve for players who'd
+  // rather cash in banked progress than watch another ad right now.
+  void _onHintTap() {
+    _showBoosterChoice(
+      title: 'Get a Hint',
+      icon: Icons.lightbulb_rounded,
+      color: const Color(0xFFFFD700),
+      coinCost: CurrencyManager.hintCost,
+      onWatchAd: _useHintWithAd,
+      onSpendCoins: () => _logic.useHint(),
+    );
+  }
+
+  void _onAddTimeTap() {
+    _showBoosterChoice(
+      title: 'Add 30 Seconds',
+      icon: Icons.timer_rounded,
+      color: const Color(0xFF29B6F6),
+      coinCost: CurrencyManager.extraTimeCost,
+      onWatchAd: _addTimeWithAd,
+      onSpendCoins: () => _logic.addTime(30),
+    );
+  }
+
+  void _showBoosterChoice({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required int coinCost,
+    required VoidCallback onWatchAd,
+    required VoidCallback onSpendCoins,
+  }) {
+    SoundManager().playTap();
+    _logic.pause();
+    final coins = CurrencyManager().balance;
+    final canAfford = coins >= coinCost;
+    final adReady = AdsManager().isRewardedReady;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (sheetCtx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A0A2E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 18),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: adReady
+                  ? () {
+                      Navigator.pop(sheetCtx);
+                      onWatchAd();
+                    }
+                  : null,
+              child: _boosterChoiceRow(
+                icon: Icons.play_circle_fill_rounded,
+                label: adReady ? 'Watch Ad' : 'Ad not ready',
+                sublabel: 'Free',
+                color: const Color(0xFF66BB6A),
+                enabled: adReady,
+              ),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: canAfford
+                  ? () async {
+                      Navigator.pop(sheetCtx);
+                      final ok = await CurrencyManager()
+                          .spend(coinCost, reason: title);
+                      if (ok) onSpendCoins();
+                    }
+                  : null,
+              child: _boosterChoiceRow(
+                icon: Icons.monetization_on_rounded,
+                label: canAfford ? 'Use Coins' : 'Not enough coins',
+                sublabel: '$coinCost coins · you have $coins',
+                color: const Color(0xFFFFD700),
+                enabled: canAfford,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() => _logic.resume());
+  }
+
+  Widget _boosterChoiceRow({
+    required IconData icon,
+    required String label,
+    required String sublabel,
+    required Color color,
+    required bool enabled,
+  }) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.4,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: color.withOpacity(0.12),
+          border: Border.all(color: color.withOpacity(0.4), width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                          color: color,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800)),
+                  Text(sublabel,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 11)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -228,16 +400,44 @@ class _GameScreenState extends State<GameScreen>
       child: Scaffold(
         backgroundColor: const Color(0xFF0D0D1A),
         body: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              _buildHUD(s),
-              _buildProgressBar(s),
-              _buildTargetWord(s),
-              _buildShadowZone(s),
-              const SizedBox(height: 6),
-              Expanded(child: _buildBoard(s)),
-              _buildBottomBar(s),
-              const BannerAdWidget(),
+              Column(
+                children: [
+                  _buildHUD(s),
+                  _buildProgressBar(s),
+                  _buildTargetWord(s),
+                  _buildShadowZone(s),
+                  const SizedBox(height: 6),
+                  Expanded(child: _buildBoard(s)),
+                  _buildBottomBar(s),
+                  const BannerAdWidget(),
+                ],
+              ),
+              // ── Celebration confetti — fires on every word complete and
+              // again on full level complete (see _onStateChange). ──
+              Align(
+                alignment: Alignment.topCenter,
+                child: IgnorePointer(
+                  child: ConfettiWidget(
+                    confettiController: _confettiCtrl,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    numberOfParticles: 22,
+                    maxBlastForce: 18,
+                    minBlastForce: 6,
+                    gravity: 0.25,
+                    emissionFrequency: 0.04,
+                    shouldLoop: false,
+                    colors: const [
+                      Color(0xFFFFD700),
+                      Color(0xFF6A11CB),
+                      Color(0xFF2575FC),
+                      Color(0xFFE53935),
+                      Color(0xFF2E7D32),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -343,7 +543,7 @@ class _GameScreenState extends State<GameScreen>
           _TimerWidget(
             seconds: s.timeRemaining,
             total: widget.level.timeLimitSecs,
-            onAddTime: AdsManager().isRewardedReady ? _addTimeWithAd : null,
+            onAddTime: _onAddTimeTap,
           ),
         ],
       ),
@@ -593,14 +793,14 @@ class _GameScreenState extends State<GameScreen>
             label: 'HINT',
             color: const Color(0xFFFFD700),
             adBadge: true,
-            onTap: _useHintWithAd,
+            onTap: _onHintTap,
           ),
           _ToolbarBtn(
             icon: Icons.timer_rounded,
             label: '+30s',
             color: const Color(0xFF29B6F6),
-            adBadge: AdsManager().isRewardedReady,
-            onTap: AdsManager().isRewardedReady ? _addTimeWithAd : null,
+            adBadge: true,
+            onTap: _onAddTimeTap,
           ),
           _ToolbarBtn(
             icon: Icons.refresh_rounded,
@@ -609,7 +809,7 @@ class _GameScreenState extends State<GameScreen>
             adBadge: false,
             onTap: () {
               SoundManager().playTap();
-              setState(() { _resultShown = false; _failsSinceLastAd = 0; });
+              setState(() { _resultShown = false; _lastTargetIndex = 0; });
               _logic.startLevel(widget.level);
             },
           ),
@@ -845,6 +1045,7 @@ class _ToolbarBtn extends StatelessWidget {
 class _LevelCompleteDialog extends StatelessWidget {
   final int score;
   final int stars;
+  final int coinsEarned;
   final Level level;
   final VoidCallback onNext;
   final VoidCallback onReplay;
@@ -853,6 +1054,7 @@ class _LevelCompleteDialog extends StatelessWidget {
   const _LevelCompleteDialog({
     required this.score,
     required this.stars,
+    required this.coinsEarned,
     required this.level,
     required this.onNext,
     required this.onReplay,
@@ -908,6 +1110,30 @@ class _LevelCompleteDialog extends StatelessWidget {
                     color: Color(0xFFB388FF),
                     fontSize: 18,
                     fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFFFFD700).withOpacity(0.12),
+                border: Border.all(
+                    color: const Color(0xFFFFD700).withOpacity(0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.monetization_on_rounded,
+                      color: Color(0xFFFFD700), size: 18),
+                  const SizedBox(width: 6),
+                  Text('+$coinsEarned',
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ),
             const SizedBox(height: 22),
             // Buttons
             if (level.id < 20)

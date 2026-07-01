@@ -127,13 +127,39 @@ class AdsManager extends ChangeNotifier {
     );
   }
 
-  void showInterstitial({VoidCallback? onDismissed}) {
+  // ── Frequency capping ─────────────────────────────────────────────────
+  // Google's own interstitial best-practice guidance is to gate on elapsed
+  // time since the last impression rather than a fixed per-action counter
+  // ("only show an interstitial after at least two minutes"). This is a
+  // single app-wide floor — every call site benefits automatically, so a
+  // future screen that calls showInterstitial() can't accidentally stack
+  // ads even if it forgets to think about frequency itself.
+  DateTime? _lastInterstitialShownAt;
+  static const Duration minInterstitialGap = Duration(seconds: 120);
+
+  bool get _cooldownElapsed {
+    final last = _lastInterstitialShownAt;
+    if (last == null) return true;
+    return DateTime.now().difference(last) >= minInterstitialGap;
+  }
+
+  void showInterstitial({
+    VoidCallback? onDismissed,
+    bool ignoreCooldown = false,
+  }) {
     if (_isShowingInterstitial) return;
+    if (!ignoreCooldown && !_cooldownElapsed) {
+      // Too soon since the last interstitial — skip silently and let the
+      // caller's flow continue as if no ad were configured here at all.
+      onDismissed?.call();
+      return;
+    }
     if (!_interstitialReady || _interstitialAd == null) {
       onDismissed?.call();
       _loadInterstitial();
       return;
     }
+    _lastInterstitialShownAt = DateTime.now();
     _isShowingInterstitial = true;
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {

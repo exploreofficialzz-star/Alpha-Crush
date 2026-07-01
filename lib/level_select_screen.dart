@@ -264,12 +264,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen>
   void _onLevelTap(Level level) {
     if (level.id > _unlockedLevel) return;
     SoundManager().playTap();
-    if (level.id % 5 == 0) {
-      AdsManager()
-          .showInterstitial(onDismissed: () => _goToGame(level));
-    } else {
-      _goToGame(level);
-    }
+    _goToGame(level);
   }
 
   void _goToGame(Level level) {

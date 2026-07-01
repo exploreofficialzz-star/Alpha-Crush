@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'models/game_state.dart';
 import 'models/level.dart';
 import 'letter_fragments.dart';
@@ -133,8 +134,12 @@ class GameLogic extends ChangeNotifier {
 
     if (combo > 1) {
       SoundManager().playCombo();
+      if (combo == 3 || combo == 5 || combo >= 8) {
+        HapticFeedback.mediumImpact();
+      }
     } else {
       SoundManager().playCorrect();
+      HapticFeedback.selectionClick();
     }
 
     // Is the current letter now complete?
@@ -166,6 +171,7 @@ class GameLogic extends ChangeNotifier {
 
       if (nextTargetIdx >= s.level.targets.length) {
         // All words done → level complete
+        HapticFeedback.heavyImpact();
         _timer?.cancel();
         _completeCount++;
         _state = s.copyWith(
@@ -177,6 +183,7 @@ class GameLogic extends ChangeNotifier {
         );
       } else {
         // Next word — RESET timer to full 100s
+        HapticFeedback.lightImpact();
         final nextLetter =
             s.level.targets[nextTargetIdx][0].toUpperCase();
         _state = s.copyWith(
@@ -194,6 +201,7 @@ class GameLogic extends ChangeNotifier {
       }
     } else {
       // ── Next letter in SAME word — timer keeps counting ──────────
+      HapticFeedback.lightImpact();
       final nextLetter = word[nextLetterIdx].toUpperCase();
       _state = s.copyWith(
         board: _buildBoard(s.level, s.targetIndex, nextLetterIdx),
@@ -212,6 +220,7 @@ class GameLogic extends ChangeNotifier {
     final tile = s.board[row][col];
 
     SoundManager().playWrong();
+    HapticFeedback.mediumImpact();
     _failCount++;
 
     // Flash shake
