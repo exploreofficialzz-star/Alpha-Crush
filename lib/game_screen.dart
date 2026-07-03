@@ -10,12 +10,18 @@ import 'ads_manager.dart';
 import 'sound_manager.dart';
 import 'currency_manager.dart';
 import 'daily_challenge_manager.dart';
+import 'endless_level_generator.dart';
 
 class GameScreen extends StatefulWidget {
   final Level level;
   final bool isDailyChallenge;
-  const GameScreen(
-      {super.key, required this.level, this.isDailyChallenge = false});
+  final bool isEndlessMode;
+  const GameScreen({
+    super.key,
+    required this.level,
+    this.isDailyChallenge = false,
+    this.isEndlessMode = false,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -132,11 +138,24 @@ class _GameScreenState extends State<GameScreen>
   Future<void> _saveProgress(int stars) async {
     final prefs = await SharedPreferences.getInstance();
     final levelId = widget.level.id;
-    final best = prefs.getInt('stars_$levelId') ?? 0;
-    if (stars > best) await prefs.setInt('stars_$levelId', stars);
-    final unlocked = prefs.getInt('unlocked_level') ?? 1;
-    if (levelId >= unlocked && levelId < 20) {
-      await prefs.setInt('unlocked_level', levelId + 1);
+    // Endless levels are procedurally generated and never revisited by
+    // id — no screen ever reads back a per-level star value for them, so
+    // skip writing one. Left unguarded, this would silently accumulate a
+    // new permanent key for every single endless level ever played.
+    if (!widget.isEndlessMode) {
+      // getStars() can legitimately return 0 for a genuine clear (score
+      // below the first star threshold, but still won). Comparing against
+      // a defaulted `best` of 0 would mean a 0-star first clear never
+      // writes this key at all — distinguishing "never attempted" from
+      // "attempted, scored 0" requires checking existence, not just value.
+      final existing = prefs.getInt('stars_$levelId');
+      if (existing == null || stars > existing) {
+        await prefs.setInt('stars_$levelId', stars);
+      }
+      final unlocked = prefs.getInt('unlocked_level') ?? 1;
+      if (levelId >= unlocked && levelId < 50) {
+        await prefs.setInt('unlocked_level', levelId + 1);
+      }
     }
     final score = _logic.state?.score ?? 0;
     final hiScore = prefs.getInt('high_score') ?? 0;
@@ -157,6 +176,14 @@ class _GameScreenState extends State<GameScreen>
     int dailyBonus = 0;
     if (widget.isDailyChallenge) {
       dailyBonus = await DailyChallengeManager().claimCompletion();
+    }
+    // Advance the persisted endless run counter immediately on completion
+    // — not deferred to the "Next Level" tap — so progress is saved even
+    // if the player backs out to Home from this dialog instead of
+    // continuing. generateNext() (called later, on tap) will then correctly
+    // read the advanced index.
+    if (widget.isEndlessMode) {
+      await EndlessLevelGenerator.advanceIndex();
     }
     if (!mounted) return;
     // New-user grace: skip interstitials entirely for the first two levels
@@ -185,8 +212,24 @@ class _GameScreenState extends State<GameScreen>
         coinsEarned: coinsEarned,
         dailyBonus: dailyBonus,
         isDailyChallenge: widget.isDailyChallenge,
+        isEndlessMode: widget.isEndlessMode,
         level: widget.level,
-        onNext: () {
+        onNext: () async {
+          if (widget.isEndlessMode) {
+            // Loading can take a beat (SharedPreferences + shuffle) —
+            // pop the dialog first so the player isn't staring at a
+            // frozen "Next Level" button with no feedback.
+            Navigator.pop(context);
+            final nextLevel = await EndlessLevelGenerator.generateNext();
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      GameScreen(level: nextLevel, isEndlessMode: true)),
+            );
+            return;
+          }
           Navigator.pop(context);
           final nextId = widget.level.id + 1;
           if (nextId <= 50) {
@@ -1191,6 +1234,7 @@ class _LevelCompleteDialog extends StatelessWidget {
   final int coinsEarned;
   final int dailyBonus;
   final bool isDailyChallenge;
+  final bool isEndlessMode;
   final Level level;
   final VoidCallback onNext;
   final VoidCallback onReplay;
@@ -1202,6 +1246,7 @@ class _LevelCompleteDialog extends StatelessWidget {
     required this.coinsEarned,
     this.dailyBonus = 0,
     this.isDailyChallenge = false,
+    this.isEndlessMode = false,
     required this.level,
     required this.onNext,
     required this.onReplay,
@@ -1312,14 +1357,15 @@ class _LevelCompleteDialog extends StatelessWidget {
             ],
             const SizedBox(height: 22),
             // Buttons
-            // Daily-challenge runs are a bonus replay, not campaign
-            // progression — "Next Level" would imply continuing past a
-            // level the player may not have actually reached yet, so it's
-            // suppressed here in favor of just Replay/Home.
-            if (!isDailyChallenge && level.id < 20)
+            // Daily-challenge runs are a one-off bonus replay with no
+            // natural "next" — suppressed entirely. Endless mode DOES
+            // continue (to a freshly generated level, not Level.byId), so
+            // it keeps the button; only the campaign's own <50 bound
+            // applies when this is neither special mode.
+            if (!isDailyChallenge && (isEndlessMode || level.id < 50))
               _dialogBtn('NEXT LEVEL', const Color(0xFFFFD700),
                   Colors.black, onNext),
-            if (!isDailyChallenge && level.id < 20)
+            if (!isDailyChallenge && (isEndlessMode || level.id < 50))
               const SizedBox(height: 10),
             Row(
               children: [

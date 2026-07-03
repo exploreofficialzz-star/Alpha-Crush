@@ -1,20 +1,26 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/level.dart';
 import 'currency_manager.dart';
+import 'endless_word_bank.dart';
+import 'endless_level_generator.dart';
 
-/// Today's Daily Challenge — a bonus replay of one level the player has
-/// already unlocked, picked deterministically from the calendar date so
-/// every device lands on the same pick for that day without needing a
-/// backend. Reuses the existing 50-level pool rather than a separate word
-/// list, which was the faster path to ship and means difficulty is
-/// already tuned — no new content to balance.
+/// Today's Daily Challenge — a bonus replay of one level, picked
+/// deterministically from the calendar date so every device lands on the
+/// same pick for that day without needing a backend.
 ///
-/// Deliberately scoped to [1, unlockedLevel]: picking from levels the
-/// player hasn't reached yet would occasionally hand a brand-new player
-/// a 10-letter compound word as their "daily challenge," which reads as
-/// unfair rather than special. Scoping to familiar territory keeps the
-/// bonus feeling like a treat, not a wall.
+/// Two sources, depending on progress:
+/// - Before the 50-level campaign is cleared: reuses that pool, scoped to
+///   [1, unlockedLevel] — picking from levels the player hasn't reached
+///   yet would occasionally hand a brand-new player a 10-letter compound
+///   word as their "daily challenge," which reads as unfair rather than
+///   special.
+/// - After the campaign is cleared: draws from the same curated word bank
+///   Endless Mode uses, still fully date-deterministic (a seeded shuffle,
+///   not the player's own progressing endless deck) so the "same for
+///   everyone today" property holds either way — finishing the campaign
+///   changes where the words come from, not what Daily Challenge means.
 class DailyChallengeManager extends ChangeNotifier {
   static final DailyChallengeManager _instance =
       DailyChallengeManager._internal();
@@ -42,14 +48,45 @@ class DailyChallengeManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Deterministic "today's level" — same calendar day always yields the
-  /// same pick everywhere, no server round-trip needed.
-  Level todaysLevel({required int unlockedLevel}) {
-    final maxId = unlockedLevel.clamp(1, 50);
+  static int get _dateSeed {
     final now = DateTime.now();
-    final seed = now.year * 372 + now.month * 31 + now.day;
-    final index = seed % maxId; // 0 .. maxId-1
-    return Level.byId(index + 1);
+    return now.year * 372 + now.month * 31 + now.day;
+  }
+
+  /// Deterministic "today's level." [campaignCompleted] should reflect
+  /// whether level 50 has actually been CLEARED (e.g. a saved star value
+  /// for it exists) — not just whether it's unlocked, since those aren't
+  /// the same moment.
+  Level todaysLevel({
+    required int unlockedLevel,
+    bool campaignCompleted = false,
+  }) {
+    final seed = _dateSeed;
+    if (!campaignCompleted) {
+      final maxId = unlockedLevel.clamp(1, 50);
+      final index = seed % maxId; // 0 .. maxId-1
+      return Level.byId(index + 1);
+    }
+
+    // Post-campaign: deterministic pick from the endless word bank. Uses
+    // a seeded Random rather than the player's own shuffled endless deck,
+    // so the result is reproducible from the date alone, on any device —
+    // the same guarantee the pre-campaign path has.
+    final cycle = EndlessWordBank.lengthCycle;
+    final length = cycle[seed % cycle.length];
+    final pool = List<String>.from(EndlessWordBank.byLength[length]!)
+      ..shuffle(Random(seed));
+    final words = pool.take(3).toList();
+    final t1 = EndlessLevelGenerator.threshold1For(length);
+    return Level(
+      id: EndlessLevelGenerator.idOffset - 1, // reserved id, never persisted
+      stageNumber: 0,
+      targets: words,
+      gridSize: EndlessLevelGenerator.gridSizeFor(length),
+      starThreshold1: t1,
+      starThreshold2: t1 * 2,
+      starThreshold3: t1 * 3,
+    );
   }
 
   bool get isCompletedToday {

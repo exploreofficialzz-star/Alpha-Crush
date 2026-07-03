@@ -9,6 +9,7 @@ import 'sound_manager.dart';
 import 'currency_manager.dart';
 import 'daily_reward_manager.dart';
 import 'daily_challenge_manager.dart';
+import 'endless_level_generator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _highScore = 0;
   int _unlockedLevel = 1;
   int _coins = 0;
+  bool _campaignCompleted = false;
 
   @override
   void initState() {
@@ -69,8 +71,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _onDailyChallengeTap() async {
     SoundManager().playTap();
-    final level =
-        DailyChallengeManager().todaysLevel(unlockedLevel: _unlockedLevel);
+    final level = DailyChallengeManager().todaysLevel(
+      unlockedLevel: _unlockedLevel,
+      campaignCompleted: _campaignCompleted,
+    );
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -83,12 +87,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (mounted) setState(() {});
   }
 
+  void _onEndlessTap() async {
+    SoundManager().playTap();
+    if (!_campaignCompleted) return; // card itself won't be tappable, but guard anyway
+    final level = await EndlessLevelGenerator.generateNext();
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GameScreen(level: level, isEndlessMode: true),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
       _highScore = prefs.getInt('high_score') ?? 0;
       _unlockedLevel = prefs.getInt('unlocked_level') ?? 1;
+      // stars_50 is only ever written by _saveProgress on an actual win —
+      // never on quit/game-over — so its presence reliably means "level
+      // 50 has been cleared," which unlocked_level alone can't tell you
+      // (unlocked_level reaching 50 just means it's reachable, not beaten).
+      _campaignCompleted = prefs.containsKey('stars_50');
     });
   }
 
@@ -196,6 +219,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _dailyChallengeCard(),
                 ),
+                // Only appears once level 50 is actually cleared — showing
+                // a permanently "locked" tile for the entire campaign
+                // would clutter the home screen for weeks with something
+                // that isn't relevant yet. Its appearance becomes its own
+                // small reward moment instead.
+                if (_campaignCompleted) ...[
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _endlessCard(),
+                  ),
+                ],
 
                 const Spacer(),
 
@@ -384,6 +419,57 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (!completed)
               const Icon(Icons.chevron_right_rounded,
                   color: Colors.white38, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _endlessCard() {
+    return GestureDetector(
+      onTap: _onEndlessTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF9C27B0).withOpacity(0.30),
+              const Color(0xFFFFD700).withOpacity(0.20),
+            ],
+          ),
+          border:
+              Border.all(color: const Color(0xFF9C6AFF).withOpacity(0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9C27B0).withOpacity(0.20),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.all_inclusive_rounded,
+                  color: Color(0xFFB388FF), size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Endless Mode',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  SizedBox(height: 2),
+                  Text('Campaign beaten — keep going, forever',
+                      style: TextStyle(fontSize: 11, color: Colors.white70)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: Colors.white38, size: 22),
           ],
         ),
       ),
