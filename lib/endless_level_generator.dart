@@ -35,7 +35,7 @@ class EndlessLevelGenerator {
   /// rather than climbing forever — see EndlessWordBank.lengthCycle for
   /// why that's the right shape for something meant to never truly end.
   static int lengthForIndex(int index) {
-    final cycle = EndlessWordBank.lengthCycle;
+    const cycle = EndlessWordBank.lengthCycle;
     return cycle[index % cycle.length];
   }
 

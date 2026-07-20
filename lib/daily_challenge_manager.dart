@@ -72,7 +72,7 @@ class DailyChallengeManager extends ChangeNotifier {
     // a seeded Random rather than the player's own shuffled endless deck,
     // so the result is reproducible from the date alone, on any device —
     // the same guarantee the pre-campaign path has.
-    final cycle = EndlessWordBank.lengthCycle;
+    const cycle = EndlessWordBank.lengthCycle;
     final length = cycle[seed % cycle.length];
     final pool = List<String>.from(EndlessWordBank.byLength[length]!)
       ..shuffle(Random(seed));
