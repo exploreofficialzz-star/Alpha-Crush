@@ -62,6 +62,9 @@ class AdsManager extends ChangeNotifier {
   }
 
   void _recordAdFailure(String type) {
+    // A player who purchased Remove Ads should never be blocked from playing
+    // because banners/interstitials fail to load — they opted out of ads.
+    if (_adsRemoved) return;
     if (type == 'banner')       _bannerFailCount++;
     if (type == 'interstitial') _interstitialFailCount++;
     if (_bannerFailCount >= _blockThreshold &&

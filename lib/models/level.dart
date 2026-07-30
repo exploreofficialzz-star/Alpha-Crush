@@ -83,7 +83,7 @@ class Level {
     Level(id: 13, stageNumber: 5, targets: ['APPLE', 'BRAVE', 'CHESS'],
           gridSize: 6,
           starThreshold1: 470, starThreshold2: 940, starThreshold3: 1400),
-    Level(id: 14, stageNumber: 5, targets: ['FLAME', 'GLOBE', 'HEART'],
+    Level(id: 14, stageNumber: 5, targets: ['FLAME', 'GLOBE', 'STORM'],
           gridSize: 6,
           starThreshold1: 480, starThreshold2: 960, starThreshold3: 1440),
     Level(id: 15, stageNumber: 5, targets: ['LIGHT', 'MUSIC', 'NIGHT'],
@@ -161,7 +161,7 @@ class Level {
     Level(id: 31, stageNumber: 11, targets: ['BEDROOM', 'SUNBURN', 'RAINBOW'],
           gridSize: 7,
           starThreshold1: 650, starThreshold2: 1300, starThreshold3: 1950),
-    Level(id: 32, stageNumber: 11, targets: ['SUNSHINE', 'BIRTHDAY', 'BACKPACK'],
+    Level(id: 32, stageNumber: 11, targets: ['SUNSHINE', 'HOMEWORK', 'BACKPACK'],
           gridSize: 7,
           starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
     Level(id: 33, stageNumber: 11, targets: ['CLASSROOM', 'BREAKFAST', 'AFTERNOON'],
@@ -216,7 +216,7 @@ class Level {
     Level(id: 44, stageNumber: 15, targets: ['OCTOPUS', 'LEOPARD', 'PENGUIN'],
           gridSize: 7,
           starThreshold1: 680, starThreshold2: 1360, starThreshold3: 2040),
-    Level(id: 45, stageNumber: 15, targets: ['ELEPHANT', 'DOLPHINS', 'FLAMINGO'],
+    Level(id: 45, stageNumber: 15, targets: ['KANGAROO', 'DOLPHINS', 'FLAMINGO'],
           gridSize: 7,
           starThreshold1: 780, starThreshold2: 1560, starThreshold3: 2340),
 
@@ -236,7 +236,7 @@ class Level {
     // ════════════════════════════════════════════════════════════
     // STAGE 17 — GRAND MASTER  (Levels 49–50)
     // ════════════════════════════════════════════════════════════
-    Level(id: 49, stageNumber: 17, targets: ['ACCOMPLISH', 'BIRTHRIGHT', 'CALCULATED'],
+    Level(id: 49, stageNumber: 17, targets: ['MOTORCYCLE', 'BIRTHRIGHT', 'RESTAURANT'],
           gridSize: 8,
           starThreshold1: 975, starThreshold2: 1950, starThreshold3: 2925),
     Level(id: 50, stageNumber: 17, targets: ['UNDERSTAND', 'EVERYWHERE', 'FRIENDSHIP'],

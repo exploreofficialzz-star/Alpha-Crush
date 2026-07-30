@@ -48,7 +48,10 @@ class NetworkGuard extends ChangeNotifier {
     _sub = Connectivity()
         .onConnectivityChanged
         .listen((_) => _check());
-    _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) => _check());
+    // 30s is enough resolution for a "no internet" overlay; 5s was too
+    // aggressive — 4 parallel HTTP requests every 5s competed with AdMob's
+    // own network usage and caused noticeable battery drain.
+    _pingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _check());
     _check();
   }
 
@@ -112,8 +115,7 @@ class NetworkGuard extends ChangeNotifier {
     HttpClient? client;
     try {
       client = HttpClient()
-        ..connectionTimeout = _probeTimeout
-        ..badCertificateCallback = (_, __, ___) => true; // don't block on cert
+        ..connectionTimeout = _probeTimeout;
 
       final uri     = Uri.parse(url);
       final request = await client

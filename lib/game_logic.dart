@@ -302,12 +302,15 @@ class GameLogic extends ChangeNotifier {
   // ─── Add time (rewarded ad) ────────────────────────────────────────────────
   void addTime(int seconds) {
     if (_state == null) return;
+    // Capture BEFORE mutating — after copyWith isPlaying is always true,
+    // so checking _state!.isPlaying afterwards would never restart the timer.
+    final needsTimerRestart = !_state!.isPlaying || _state!.isGameOver;
     _state = _state!.copyWith(
       timeRemaining: _state!.timeRemaining + seconds,
       isPlaying: true,
       isGameOver: false,
     );
-    if (!(_state!.isPlaying)) _startTimer();
+    if (needsTimerRestart) _startTimer();
     notifyListeners();
   }
 

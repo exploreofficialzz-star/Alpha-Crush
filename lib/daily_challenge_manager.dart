@@ -63,7 +63,11 @@ class DailyChallengeManager extends ChangeNotifier {
   }) {
     final seed = _dateSeed;
     if (!campaignCompleted) {
-      final maxId = unlockedLevel.clamp(1, 50);
+      // unlockedLevel is the *next* level to play (e.g. 4 means 1–3 are cleared).
+      // Using it directly as the upper bound would let the daily challenge pick
+      // a level the player has never seen. Clamp to (unlockedLevel - 1) so we
+      // only draw from levels that have actually been cleared.
+      final maxId = (unlockedLevel - 1).clamp(1, 50);
       final index = seed % maxId; // 0 .. maxId-1
       return Level.byId(index + 1);
     }

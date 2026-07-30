@@ -192,9 +192,12 @@ class _GameScreenState extends State<GameScreen>
     // AdsManager's own cooldown then keeps it to roughly once per ~2 min
     // for everyone after that — never two in a row, never stacked.
     if (widget.level.id > 2) {
+      SoundManager().pauseBGM();
       AdsManager().showInterstitial(
-          onDismissed: () =>
-              _showCompleteDialog(s, stars, coinsEarned, dailyBonus));
+          onDismissed: () {
+            SoundManager().resumeBGM();
+            _showCompleteDialog(s, stars, coinsEarned, dailyBonus);
+          });
     } else {
       _showCompleteDialog(s, stars, coinsEarned, dailyBonus);
     }
@@ -262,12 +265,15 @@ class _GameScreenState extends State<GameScreen>
         onContinue: AdsManager().isRewardedReady
             ? () {
                 Navigator.pop(context);
+                SoundManager().pauseBGM();
                 AdsManager().showRewarded(
                   onEarned: (_) {
+                    SoundManager().resumeBGM();
                     _logic.continueGame();
                     setState(() { _resultShown = false; _lastTargetIndex = 0; });
                   },
                   onFailed: () {
+                    SoundManager().resumeBGM();
                     setState(() { _resultShown = false; _lastTargetIndex = 0; });
                     _logic.startLevel(widget.level);
                   },
@@ -286,6 +292,10 @@ class _GameScreenState extends State<GameScreen>
 
   void _showPauseMenu() {
     _logic.pause();
+    // No .then() here — every branch of _PauseDialog handles its own
+    // post-dismiss state explicitly. Adding .then(resume) caused a double
+    // resume on the Resume path and a spurious resume after Replay/Home
+    // that left GameLogic in an unexpected playing state.
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -301,22 +311,24 @@ class _GameScreenState extends State<GameScreen>
         },
         onHome: () => Navigator.popUntil(context, (r) => r.isFirst),
       ),
-    ).then((_) => _logic.resume());
+    );
   }
 
   void _useHintWithAd() {
     SoundManager().playTap();
+    SoundManager().pauseBGM();
     AdsManager().showRewarded(
-      onEarned: (_) => _logic.useHint(),
-      onFailed: () => _logic.useHint(),
+      onEarned: (_) { SoundManager().resumeBGM(); _logic.useHint(); },
+      onFailed: () { SoundManager().resumeBGM(); _logic.useHint(); },
     );
   }
 
   void _addTimeWithAd() {
     SoundManager().playTap();
+    SoundManager().pauseBGM();
     AdsManager().showRewarded(
-      onEarned: (_) => _logic.addTime(30),
-      onFailed: () {},
+      onEarned: (_) { SoundManager().resumeBGM(); _logic.addTime(30); },
+      onFailed: () => SoundManager().resumeBGM(),
     );
   }
 
@@ -1007,6 +1019,9 @@ class _BoardCellState extends State<_BoardCell> {
   // A quick squash-on-press-and-release makes every single tap feel more
   // physical, not just the ones that happen to land on a correct letter.
   bool _pressed = false;
+  // Reused across builds — creating new Random() inside build() on every
+  // GameLogic notification was wasteful and produced near-identical seeds.
+  final _shakeRng = math.Random();
 
   @override
   Widget build(BuildContext context) {
@@ -1076,7 +1091,7 @@ class _BoardCellState extends State<_BoardCell> {
             transform: tile.isShaking
                 ? (Matrix4.identity()
                   ..translate(
-                      math.Random().nextDouble() * 4 - 2, 0))
+                      _shakeRng.nextDouble() * 4 - 2, 0))
                 : Matrix4.identity(),
             child: Center(
               child: CustomPaint(
