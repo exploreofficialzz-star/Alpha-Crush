@@ -160,9 +160,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           // ── Main content ──
           SafeArea(
-            child: Column(
+            child: LayoutBuilder(builder: (_, constraints) {
+              // Adapt logo and title sizes for compact screens (< 650pt tall).
+              // On a Galaxy A03 (600dp) or older 5" phones the fixed 110/48/40px
+              // values stack beyond the available height leaving no room for the
+              // PLAY button and banner. Spacer() absorbs the difference on tall
+              // screens so nothing shifts there.
+              final h = constraints.maxHeight;
+              final isCompact = h < 650;
+              final logoSize = isCompact ? 80.0 : 110.0;
+              final alphaFs  = isCompact ? 30.0 : 40.0;
+              final crushFs  = isCompact ? 36.0 : 48.0;
+            return Column(
               children: [
-                const SizedBox(height: 16),
+                SizedBox(height: isCompact ? 8 : 16),
 
                 // ── Top bar ──
                 Padding(
@@ -236,8 +247,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                 // ── Logo ──
                 Container(
-                  width: 110,
-                  height: 110,
+                  width: logoSize,
+                  height: logoSize,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
@@ -252,8 +263,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(28),
                     child: Image.asset(
                       'assets/images/app_icon.png',
-                      width: 110,
-                      height: 110,
+                      width: logoSize,
+                      height: logoSize,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -265,9 +276,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   shaderCallback: (b) => const LinearGradient(
                     colors: [Colors.white, Color(0xFFB388FF)],
                   ).createShader(b),
-                  child: const Text('ALPHA',
+                  child: Text('ALPHA',
                       style: TextStyle(
-                          fontSize: 40,
+                          fontSize: alphaFs,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                           letterSpacing: 10)),
@@ -276,9 +287,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   shaderCallback: (b) => const LinearGradient(
                     colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
                   ).createShader(b),
-                  child: const Text('CRUSH',
+                  child: Text('CRUSH',
                       style: TextStyle(
-                          fontSize: 48,
+                          fontSize: crushFs,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                           letterSpacing: 8)),
@@ -347,7 +358,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 const BannerAdWidget(),
                 const SizedBox(height: 8),
               ],
-            ),
+            );
+            }), // LayoutBuilder
           ),
         ],
       ),

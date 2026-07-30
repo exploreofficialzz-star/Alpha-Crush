@@ -494,9 +494,9 @@ class _GameScreenState extends State<GameScreen>
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return PopScope(
+    return PopScope<Object?>(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _showPauseMenu();
       },
       child: Scaffold(
@@ -754,6 +754,8 @@ class _GameScreenState extends State<GameScreen>
               child: Center(
                 child: Text(
                   word,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDone
                         ? Colors.white
@@ -778,75 +780,91 @@ class _GameScreenState extends State<GameScreen>
     final word = s.currentWord;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(word.length, (i) {
-          final letter = word[i].toUpperCase();
-          final isDone = i < s.letterIndex;
-          final isActive = i == s.letterIndex;
-          final col = LetterFragments.colorOf(letter);
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: isDone
-                  ? col.withOpacity(0.8)
-                  : isActive
-                      ? col.withOpacity(0.25)
-                      : Colors.white.withOpacity(0.05),
-              border: isActive
-                  ? Border.all(color: col, width: 2)
-                  : isDone
-                      ? null
-                      : Border.all(
-                          color: Colors.white.withOpacity(0.15), width: 1),
-            ),
-            child: Center(
-              child: Text(
-                letter,
-                style: TextStyle(
-                  color: isDone
-                      ? Colors.white
-                      : isActive
-                          ? col
-                          : Colors.white24,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
+      // LayoutBuilder prevents the fixed-36px-box Row from overflowing on
+      // narrow phones. A 10-letter word at 36px + 6px gap = 420px — wider
+      // than a 375pt screen after padding. Boxes now scale down to fit and
+      // the font tracks proportionally so text never clips either.
+      child: LayoutBuilder(builder: (_, constraints) {
+        final n = word.length;
+        const gap = 6.0;
+        const maxBox = 36.0;
+        final boxW =
+            ((constraints.maxWidth - gap * (n - 1)) / n).clamp(16.0, maxBox);
+        final fSize = (boxW * 0.44).clamp(9.0, 16.0);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(n, (i) {
+            final letter = word[i].toUpperCase();
+            final isDone = i < s.letterIndex;
+            final isActive = i == s.letterIndex;
+            final col = LetterFragments.colorOf(letter);
+            return Container(
+              margin: EdgeInsets.symmetric(horizontal: gap / 2),
+              width: boxW,
+              height: boxW,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: isDone
+                    ? col.withOpacity(0.8)
+                    : isActive
+                        ? col.withOpacity(0.25)
+                        : Colors.white.withOpacity(0.05),
+                border: isActive
+                    ? Border.all(color: col, width: 2)
+                    : isDone
+                        ? null
+                        : Border.all(
+                            color: Colors.white.withOpacity(0.15), width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  letter,
+                  style: TextStyle(
+                    color: isDone
+                        ? Colors.white
+                        : isActive
+                            ? col
+                            : Colors.white24,
+                    fontSize: fSize,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
-            ),
-          );
-        }),
-      ),
+            );
+          }),
+        );
+      }),
     );
   }
 
   // ─── Shadow zone ──────────────────────────────────────────────────────────
   Widget _buildShadowZone(GameState s) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withOpacity(0.04),
-        border: Border.all(color: s.currentColor.withOpacity(0.30), width: 1),
-      ),
-      child: Row(
-        children: [
-          // Shadow letter
-          SizedBox(
-            width: 80,
-            height: 80,
-            child: CustomPaint(
-              painter: ShadowPainter(
-                letter: s.currentLetter,
-                collected: s.letterBuild.collectedPieces,
-                letterColor: s.currentColor,
+    return LayoutBuilder(builder: (_, outer) {
+      // Painter scales with available width so it looks right on small
+      // phones (320pt) and tablets alike, without eating too much height.
+      final painterSize = (outer.maxWidth * 0.19).clamp(56.0, 88.0);
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.04),
+          border: Border.all(color: s.currentColor.withOpacity(0.30), width: 1),
+        ),
+        child: Row(
+          children: [
+            // Shadow letter
+            SizedBox(
+              width: painterSize,
+              height: painterSize,
+              child: CustomPaint(
+                painter: ShadowPainter(
+                  letter: s.currentLetter,
+                  collected: s.letterBuild.collectedPieces,
+                  letterColor: s.currentColor,
+                ),
               ),
             ),
-          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -927,6 +945,7 @@ class _GameScreenState extends State<GameScreen>
         ],
       ),
     );
+  });
   }
 
   // ─── Board ────────────────────────────────────────────────────────────────
@@ -934,27 +953,35 @@ class _GameScreenState extends State<GameScreen>
     final board = s.board;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final cellSize = constraints.maxWidth / s.level.gridSize;
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(board.length, (r) {
-            return Row(
-              children: List.generate(board[r].length, (c) {
-                return _BoardCell(
-                  tile: board[r][c],
-                  size: cellSize,
-                  currentLetter: s.currentLetter,
-                  onTap: () {
-                    SoundManager().playTap();
-                    _logic.onTileTapped(r, c);
-                  },
+      // Center + ConstrainedBox keeps cells from becoming comically large on
+      // tablets. At 5 cells wide the unconstrained size would be 768/5 = 153pt
+      // per cell on a tablet. Cap the board at 520pt so cells stay ≤104pt.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: LayoutBuilder(builder: (context, constraints) {
+            final cellSize = constraints.maxWidth / s.level.gridSize;
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(board.length, (r) {
+                return Row(
+                  children: List.generate(board[r].length, (c) {
+                    return _BoardCell(
+                      tile: board[r][c],
+                      size: cellSize,
+                      currentLetter: s.currentLetter,
+                      onTap: () {
+                        SoundManager().playTap();
+                        _logic.onTileTapped(r, c);
+                      },
+                    );
+                  }),
                 );
               }),
             );
           }),
-        );
-      }),
+        ),
+      ),
     );
   }
 
@@ -1284,7 +1311,8 @@ class _LevelCompleteDialog extends StatelessWidget {
           border: Border.all(
               color: const Color(0xFF6A11CB).withOpacity(0.5), width: 1.5),
         ),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
@@ -1397,6 +1425,7 @@ class _LevelCompleteDialog extends StatelessWidget {
               ],
             ),
           ],
+          ), // SingleChildScrollView
         ),
       ),
     );

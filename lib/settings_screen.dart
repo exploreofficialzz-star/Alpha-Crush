@@ -63,6 +63,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 32),
 
+              // Wrap everything between the header and the bottom banner in a
+              // scroll view — on phones with IAP products loaded the section
+              // can be taller than a 5" screen and caused a RenderFlex overflow.
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
               // ── Sound Effects toggle ──
               _buildSettingTile(
                 'Sound Effects',
@@ -150,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 builder: (_, __) => _buildIapSection(),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 32),
 
               // ── App info ──
               Column(
@@ -183,6 +190,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 32),
                 ],
               ),
+                    ], // inner Column children
+                  ), // inner Column
+                ), // SingleChildScrollView
+              ), // Expanded
 
               // ── Banner ad ──
               const BannerAdWidget(),
