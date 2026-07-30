@@ -494,9 +494,9 @@ class _GameScreenState extends State<GameScreen>
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return PopScope<Object?>(
+    return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
+      onPopInvoked: (didPop) {
         if (!didPop) _showPauseMenu();
       },
       child: Scaffold(
@@ -799,7 +799,7 @@ class _GameScreenState extends State<GameScreen>
             final isActive = i == s.letterIndex;
             final col = LetterFragments.colorOf(letter);
             return Container(
-              margin: EdgeInsets.symmetric(horizontal: gap / 2),
+              margin: const EdgeInsets.symmetric(horizontal: 3.0),
               width: boxW,
               height: boxW,
               decoration: BoxDecoration(
