@@ -22,6 +22,7 @@ env:
   GODOT_VERSION: 4.7.2-stable
   GODOT_TEMPLATE_VERSION: 4.7.2.stable
   GODOT_PROJECT_PRESET: Android Internal
+  GODOT_APK_PRESET: Android APK
   ANDROID_API_LEVEL: "35"
   ANDROID_BUILD_TOOLS: 35.0.0
 
@@ -174,11 +175,15 @@ jobs:
           mkdir -p build
           godot --headless --path . --export-release "$GODOT_PROJECT_PRESET" build/alpha_crush_internal.aab
           test -s build/alpha_crush_internal.aab
+          godot --headless --path . --export-release "$GODOT_APK_PRESET" build/alpha_crush_internal.apk
+          test -s build/alpha_crush_internal.apk
 
       - name: Upload signed AAB
         uses: actions/upload-artifact@v4
         with:
           name: alpha-crush-android-${{ github.sha }}
-          path: build/alpha_crush_internal.aab
+          path: |
+            build/alpha_crush_internal.aab
+            build/alpha_crush_internal.apk
           if-no-files-found: error
           retention-days: 14
