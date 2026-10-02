@@ -1,0 +1,98 @@
+[
+  {
+    "id": "coins",
+    "category": "currency",
+    "stack": 999999,
+    "sell": 0
+  },
+  {
+    "id": "gems",
+    "category": "premium",
+    "stack": 999999,
+    "sell": 0
+  },
+  {
+    "id": "fruit_apple",
+    "category": "fruits",
+    "stack": 99,
+    "sell": 12
+  },
+  {
+    "id": "fruit_orange",
+    "category": "fruits",
+    "stack": 99,
+    "sell": 14
+  },
+  {
+    "id": "fruit_mango",
+    "category": "fruits",
+    "stack": 99,
+    "sell": 18
+  },
+  {
+    "id": "crop_wheat",
+    "category": "crops",
+    "stack": 99,
+    "sell": 9
+  },
+  {
+    "id": "wood",
+    "category": "materials",
+    "stack": 99,
+    "sell": 8
+  },
+  {
+    "id": "stone",
+    "category": "materials",
+    "stack": 99,
+    "sell": 7
+  },
+  {
+    "id": "basket",
+    "category": "tools",
+    "stack": 10,
+    "sell": 25
+  },
+  {
+    "id": "letter",
+    "category": "letters",
+    "stack": 99,
+    "sell": 0
+  },
+  {
+    "id": "fruit_berry",
+    "category": "fruits",
+    "stack": 99,
+    "sell": 16
+  },
+  {
+    "id": "flower",
+    "category": "nature",
+    "stack": 99,
+    "sell": 6
+  },
+  {
+    "id": "ore",
+    "category": "materials",
+    "stack": 99,
+    "sell": 22
+  },
+  {
+    "id": "crate",
+    "category": "storage",
+    "stack": 20,
+    "sell": 30
+  },
+  {
+    "id": "lantern",
+    "category": "tools",
+    "stack": 5,
+    "sell": 35
+  },
+  {
+    "id": "seeds",
+    "category": "farming",
+    "stack": 99,
+    "sell": 5
+  }
+]

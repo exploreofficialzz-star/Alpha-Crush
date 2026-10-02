@@ -1,0 +1,19 @@
+{
+  "game.title": "Alpha Crush",
+  "core.identity": "WORDS CHANGE THE WORLD",
+  "button.interact": "INTERACT",
+  "button.inventory": "INVENTORY",
+  "button.map": "MAP",
+  "button.daily": "DAILY",
+  "button.hint": "HINT",
+  "button.save": "SAVE",
+  "word.forest": "FOREST",
+  "word.water": "WATER",
+  "word.harvest": "HARVEST",
+  "word.build": "BUILD",
+  "word.friend": "FRIEND",
+  "word.explore": "EXPLORE",
+  "word.festival": "FESTIVAL",
+  "word.future": "FUTURE",
+  "word.together": "TOGETHER"
+}

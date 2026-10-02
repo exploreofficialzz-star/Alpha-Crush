@@ -1,0 +1,14 @@
+[
+  {"id":"garden","word":"LADDER","region":"starter_village","title":"Elevated Garden"},
+  {"id":"orchard","word":"ORANGE","region":"orchard","title":"Wake the Orchard"},
+  {"id":"basket","word":"BASKET","region":"orchard","title":"Carry the Harvest"},
+  {"id":"market","word":"MARKET","region":"starter_village","title":"Open the Market"},
+  {"id":"bridge","word":"BRIDGE","region":"riverlands","title":"Reconnect the Riverlands"},
+  {"id":"farmland","word":"SEEDS","region":"farmland","title":"Bring Back the Fields"},
+  {"id":"workshop","word":"TOOLS","region":"industrial","title":"Restore the Workshop"},
+  {"id":"cave","word":"LANTERN","region":"caves","title":"Light the Deep"},
+  {"id":"harbor","word":"ENGINE","region":"harbor","title":"Return to the Water"},
+  {"id":"storage","word":"KEY","region":"ruins","title":"Unlock the Old Stores"},
+  {"id":"beacon","word":"LIGHT","region":"highlands","title":"Light the Horizon"},
+  {"id":"unity","word":"TOGETHER","region":"starter_village","title":"Bring Everyone Together"}
+]

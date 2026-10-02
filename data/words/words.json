@@ -1,0 +1,447 @@
+[
+  {
+    "id": "ladder",
+    "display_word": "LADDER",
+    "category": "construction",
+    "difficulty": 1,
+    "environment": "starter_village",
+    "effects": [
+      "create_ladder",
+      "unlock_garden"
+    ],
+    "related_object_types": [
+      "garden",
+      "ladder"
+    ],
+    "rarity": "common",
+    "tutorial": true,
+    "localization_key": "word.ladder",
+    "multiplayer": true
+  },
+  {
+    "id": "orange",
+    "display_word": "ORANGE",
+    "category": "food",
+    "difficulty": 1,
+    "environment": "orchard",
+    "effects": [
+      "activate_orange_harvest"
+    ],
+    "related_object_types": [
+      "orange_tree"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.orange",
+    "multiplayer": true
+  },
+  {
+    "id": "basket",
+    "display_word": "BASKET",
+    "category": "farming",
+    "difficulty": 2,
+    "environment": "orchard",
+    "effects": [
+      "increase_harvest_capacity"
+    ],
+    "related_object_types": [
+      "basket"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.basket",
+    "multiplayer": true
+  },
+  {
+    "id": "market",
+    "display_word": "MARKET",
+    "category": "social",
+    "difficulty": 2,
+    "environment": "starter_village",
+    "effects": [
+      "open_market"
+    ],
+    "related_object_types": [
+      "market"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.market",
+    "multiplayer": true
+  },
+  {
+    "id": "bridge",
+    "display_word": "BRIDGE",
+    "category": "construction",
+    "difficulty": 2,
+    "environment": "riverlands",
+    "effects": [
+      "repair_bridge"
+    ],
+    "related_object_types": [
+      "bridge"
+    ],
+    "rarity": "uncommon",
+    "tutorial": false,
+    "localization_key": "word.bridge",
+    "multiplayer": true
+  },
+  {
+    "id": "repair",
+    "display_word": "REPAIR",
+    "category": "utilities",
+    "difficulty": 2,
+    "environment": "all",
+    "effects": [
+      "repair_object"
+    ],
+    "related_object_types": [
+      "broken_object"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.repair",
+    "multiplayer": true
+  },
+  {
+    "id": "seeds",
+    "display_word": "SEEDS",
+    "category": "farming",
+    "difficulty": 1,
+    "environment": "farmland",
+    "effects": [
+      "activate_field"
+    ],
+    "related_object_types": [
+      "field"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.seeds",
+    "multiplayer": true
+  },
+  {
+    "id": "tools",
+    "display_word": "TOOLS",
+    "category": "tools",
+    "difficulty": 2,
+    "environment": "starter_village",
+    "effects": [
+      "open_workshop"
+    ],
+    "related_object_types": [
+      "workshop"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.tools",
+    "multiplayer": true
+  },
+  {
+    "id": "lantern",
+    "display_word": "LANTERN",
+    "category": "exploration",
+    "difficulty": 2,
+    "environment": "caves",
+    "effects": [
+      "light_cave"
+    ],
+    "related_object_types": [
+      "cave"
+    ],
+    "rarity": "uncommon",
+    "tutorial": false,
+    "localization_key": "word.lantern",
+    "multiplayer": true
+  },
+  {
+    "id": "boat",
+    "display_word": "BOAT",
+    "category": "transport",
+    "difficulty": 2,
+    "environment": "riverlands",
+    "effects": [
+      "enable_boat"
+    ],
+    "related_object_types": [
+      "dock"
+    ],
+    "rarity": "uncommon",
+    "tutorial": false,
+    "localization_key": "word.boat",
+    "multiplayer": true
+  },
+  {
+    "id": "gate",
+    "display_word": "GATE",
+    "category": "utilities",
+    "difficulty": 2,
+    "environment": "starter_village",
+    "effects": [
+      "activate_gate"
+    ],
+    "related_object_types": [
+      "gate"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.gate",
+    "multiplayer": true
+  },
+  {
+    "id": "light",
+    "display_word": "LIGHT",
+    "category": "utilities",
+    "difficulty": 1,
+    "environment": "caves",
+    "effects": [
+      "light_area"
+    ],
+    "related_object_types": [
+      "lamp"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.light",
+    "multiplayer": true
+  },
+  {
+    "id": "open",
+    "display_word": "OPEN",
+    "category": "utilities",
+    "difficulty": 1,
+    "environment": "starter_village",
+    "effects": [
+      "open_shop"
+    ],
+    "related_object_types": [
+      "door"
+    ],
+    "rarity": "common",
+    "tutorial": false,
+    "localization_key": "word.open",
+    "multiplayer": true
+  },
+  {
+    "id": "upgrade",
+    "display_word": "UPGRADE",
+    "category": "construction",
+    "difficulty": 2,
+    "environment": "all",
+    "effects": [
+      "upgrade_object"
+    ],
+    "related_object_types": [
+      "building"
+    ],
+    "rarity": "uncommon",
+    "tutorial": false,
+    "localization_key": "word.upgrade",
+    "multiplayer": true
+  },
+  {
+    "id": "key",
+    "display_word": "KEY",
+    "category": "utilities",
+    "difficulty": 1,
+    "environment": "ruins",
+    "effects": [
+      "unlock_storage"
+    ],
+    "related_object_types": [
+      "storage"
+    ],
+    "rarity": "uncommon",
+    "tutorial": false,
+    "localization_key": "word.key",
+    "multiplayer": true
+  },
+  {
+    "id": "engine",
+    "display_word": "ENGINE",
+    "category": "transport",
+    "difficulty": 2,
+    "environment": "riverlands",
+    "effects": [
+      "repair_boat"
+    ],
+    "related_object_types": [
+      "boat"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.engine",
+    "multiplayer": true
+  },
+  {
+    "id": "together",
+    "display_word": "TOGETHER",
+    "category": "social",
+    "difficulty": 3,
+    "environment": "starter_village",
+    "effects": [
+      "unite_community",
+      "complete_world_arc"
+    ],
+    "related_object_types": [
+      "community_hall",
+      "village"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.together",
+    "multiplayer": true
+  },
+  {
+    "id": "forest",
+    "display_word": "FOREST",
+    "category": "nature",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.forest",
+    "multiplayer": true
+  },
+  {
+    "id": "water",
+    "display_word": "WATER",
+    "category": "environment",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.water",
+    "multiplayer": true
+  },
+  {
+    "id": "harvest",
+    "display_word": "HARVEST",
+    "category": "farming",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.harvest",
+    "multiplayer": true
+  },
+  {
+    "id": "build",
+    "display_word": "BUILD",
+    "category": "construction",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.build",
+    "multiplayer": true
+  },
+  {
+    "id": "friend",
+    "display_word": "FRIEND",
+    "category": "social",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.friend",
+    "multiplayer": true
+  },
+  {
+    "id": "explore",
+    "display_word": "EXPLORE",
+    "category": "exploration",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.explore",
+    "multiplayer": true
+  },
+  {
+    "id": "festival",
+    "display_word": "FESTIVAL",
+    "category": "events",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.festival",
+    "multiplayer": true
+  },
+  {
+    "id": "future",
+    "display_word": "FUTURE",
+    "category": "environment",
+    "difficulty": 3,
+    "environment": "all",
+    "effects": [
+      "postgame_challenge",
+      "world_reward"
+    ],
+    "related_object_types": [
+      "landmark",
+      "region"
+    ],
+    "rarity": "rare",
+    "tutorial": false,
+    "localization_key": "word.future",
+    "multiplayer": true
+  }
+]

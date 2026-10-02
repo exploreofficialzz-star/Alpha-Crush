@@ -1,0 +1,14 @@
+[
+  {
+    "id": "harvest_festival",
+    "duration_hours": 48,
+    "type": "market_bonus",
+    "multiplier": 1.35
+  },
+  {
+    "id": "rain_bloom",
+    "duration_hours": 24,
+    "type": "resource_refresh",
+    "multiplier": 1.2
+  }
+]

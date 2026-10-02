@@ -1,0 +1,243 @@
+[
+  {
+    "id": "starter_village",
+    "name": "Starter Village",
+    "seed_offset": 11,
+    "terrain": "rolling",
+    "vegetation": "village",
+    "buildings": "modular",
+    "resources": [
+      "wood",
+      "stone",
+      "fruit_apple"
+    ],
+    "music": "starter_village"
+  },
+  {
+    "id": "forest",
+    "name": "Forest",
+    "seed_offset": 18,
+    "terrain": "forest",
+    "vegetation": "dense",
+    "buildings": "modular",
+    "resources": [
+      "wood",
+      "fruit_berry"
+    ],
+    "music": "forest"
+  },
+  {
+    "id": "orchard",
+    "name": "Orchard",
+    "seed_offset": 25,
+    "terrain": "orchard",
+    "vegetation": "orchard",
+    "buildings": "modular",
+    "resources": [
+      "fruit_apple",
+      "fruit_orange",
+      "fruit_mango"
+    ],
+    "music": "orchard"
+  },
+  {
+    "id": "riverlands",
+    "name": "Riverlands",
+    "seed_offset": 32,
+    "terrain": "river",
+    "vegetation": "wet",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "wood"
+    ],
+    "music": "riverlands"
+  },
+  {
+    "id": "farmland",
+    "name": "Farmland",
+    "seed_offset": 39,
+    "terrain": "field",
+    "vegetation": "crops",
+    "buildings": "modular",
+    "resources": [
+      "crop_wheat",
+      "wood"
+    ],
+    "music": "farmland"
+  },
+  {
+    "id": "caves",
+    "name": "Caves",
+    "seed_offset": 46,
+    "terrain": "cave",
+    "vegetation": "none",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore"
+    ],
+    "music": "caves"
+  },
+  {
+    "id": "coastal_town",
+    "name": "Coastal Town",
+    "seed_offset": 53,
+    "terrain": "coast",
+    "vegetation": "coastal",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "fruit_mango"
+    ],
+    "music": "coastal_town"
+  },
+  {
+    "id": "mountain",
+    "name": "High Mountain",
+    "seed_offset": 60,
+    "terrain": "mountain",
+    "vegetation": "alpine",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore",
+      "wood"
+    ],
+    "music": "mountain"
+  },
+  {
+    "id": "beach",
+    "name": "Sun Beach",
+    "seed_offset": 67,
+    "terrain": "beach",
+    "vegetation": "coastal",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "fruit_mango"
+    ],
+    "music": "beach"
+  },
+  {
+    "id": "desert",
+    "name": "Red Desert",
+    "seed_offset": 74,
+    "terrain": "desert",
+    "vegetation": "sparse",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore"
+    ],
+    "music": "desert"
+  },
+  {
+    "id": "snow",
+    "name": "Snowfields",
+    "seed_offset": 81,
+    "terrain": "snow",
+    "vegetation": "cold",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore"
+    ],
+    "music": "snow"
+  },
+  {
+    "id": "wetlands",
+    "name": "Green Wetlands",
+    "seed_offset": 88,
+    "terrain": "wetlands",
+    "vegetation": "marsh",
+    "buildings": "modular",
+    "resources": [
+      "wood",
+      "flower"
+    ],
+    "music": "wetlands"
+  },
+  {
+    "id": "canyon",
+    "name": "Amber Canyon",
+    "seed_offset": 95,
+    "terrain": "canyon",
+    "vegetation": "dry",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore"
+    ],
+    "music": "canyon"
+  },
+  {
+    "id": "ruins",
+    "name": "Old Ruins",
+    "seed_offset": 102,
+    "terrain": "ruins",
+    "vegetation": "ruined",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "ore",
+      "wood"
+    ],
+    "music": "ruins"
+  },
+  {
+    "id": "industrial",
+    "name": "Future Works",
+    "seed_offset": 109,
+    "terrain": "industrial",
+    "vegetation": "industrial",
+    "buildings": "modular",
+    "resources": [
+      "ore",
+      "stone",
+      "wood"
+    ],
+    "music": "industrial"
+  },
+  {
+    "id": "futuristic_city",
+    "name": "New City",
+    "seed_offset": 116,
+    "terrain": "city",
+    "vegetation": "urban",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "wood"
+    ],
+    "music": "futuristic_city"
+  },
+  {
+    "id": "harbor",
+    "name": "Grand Harbor",
+    "seed_offset": 123,
+    "terrain": "harbor",
+    "vegetation": "coastal",
+    "buildings": "modular",
+    "resources": [
+      "stone",
+      "wood",
+      "fruit_mango"
+    ],
+    "music": "harbor"
+  },
+  {
+    "id": "highlands",
+    "name": "Bright Highlands",
+    "seed_offset": 130,
+    "terrain": "highlands",
+    "vegetation": "rolling",
+    "buildings": "modular",
+    "resources": [
+      "wood",
+      "stone",
+      "flower"
+    ],
+    "music": "highlands"
+  }
+]

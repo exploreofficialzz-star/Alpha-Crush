@@ -1,0 +1,8 @@
+[
+  {"id":"first_word","title":"Word Weaver","description":"Complete your first world-changing word.","event":"word_completed","target":1,"reward":{"coins":40}},
+  {"id":"explorer","title":"Curious Explorer","description":"Discover five places or opportunities.","event":"discovery","target":5,"reward":{"gems":2}},
+  {"id":"harvester","title":"Green Thumb","description":"Harvest 25 resources.","event":"harvest","target":25,"reward":{"coins":100}},
+  {"id":"trader","title":"Village Trader","description":"Sell resources in the marketplace five times.","event":"sale","target":5,"reward":{"coins":120}},
+  {"id":"maker","title":"Village Maker","description":"Craft five useful items.","event":"craft","target":5,"reward":{"coins":80}},
+  {"id":"pathfinder","title":"Pathfinder","description":"Discover three distinct regions.","event":"region_discovered","target":3,"reward":{"gems":3}}
+]

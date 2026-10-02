@@ -1,0 +1,13 @@
+{
+  "android_app_id": "ca-app-pub-2492078126313994~4183716809",
+  "ads": {
+    "banner": "ca-app-pub-2492078126313994/2810925382",
+    "interstitial": "ca-app-pub-2492078126313994/9811448001",
+    "rewarded": "ca-app-pub-2492078126313994/8498366339"
+  },
+  "products": {
+    "remove_ads": {"type": "non_consumable"},
+    "coin_pack_small": {"type": "consumable", "coins": 100},
+    "coin_pack_large": {"type": "consumable", "coins": 550}
+  }
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "basket",
+    "inputs": {
+      "wood": 5
+    },
+    "output": "basket",
+    "amount": 1
+  },
+  {
+    "id": "crate",
+    "inputs": {
+      "wood": 8,
+      "stone": 2
+    },
+    "output": "crate",
+    "amount": 1
+  },
+  {
+    "id": "lantern",
+    "inputs": {
+      "wood": 3,
+      "ore": 1
+    },
+    "output": "lantern",
+    "amount": 1
+  },
+  {
+    "id": "seed_bundle",
+    "inputs": {
+      "flower": 2,
+      "wood": 1
+    },
+    "output": "seeds",
+    "amount": 5
+  },
+  {
+    "id": "market_crate",
+    "inputs": {
+      "wood": 5,
+      "stone": 1
+    },
+    "output": "crate",
+    "amount": 1
+  }
+]

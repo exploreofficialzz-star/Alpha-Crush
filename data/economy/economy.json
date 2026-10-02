@@ -1,0 +1,20 @@
+{
+  "base_prices": {
+    "fruit_apple": 12,
+    "fruit_orange": 14,
+    "fruit_mango": 18,
+    "crop_wheat": 9,
+    "wood": 8,
+    "stone": 7,
+    "ore": 25
+  },
+  "market_order_bonus": 1.25,
+  "upgrade_costs": {
+    "garden": 100,
+    "storage": 150,
+    "workshop": 250,
+    "market": 400
+  },
+  "premium_currency": "gems",
+  "primary_currency": "coins"
+}

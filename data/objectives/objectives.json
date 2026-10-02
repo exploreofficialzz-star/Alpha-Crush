@@ -1,0 +1,72 @@
+[
+  {
+    "id": "garden_unlock",
+    "title": "Elevated Garden",
+    "requirement": "LADDER",
+    "world_effect": "unlock_garden",
+    "next": "harvest"
+  },
+  {
+    "id": "harvest",
+    "title": "Harvest Resources",
+    "requirement": "BASKET",
+    "world_effect": "increase_harvest_capacity",
+    "next": "market"
+  },
+  {
+    "id": "market",
+    "title": "Open Market",
+    "requirement": "MARKET",
+    "world_effect": "open_market",
+    "next": "river_bridge"
+  },
+  {
+    "id": "river_bridge",
+    "title": "Broken Bridge",
+    "requirement": "BRIDGE",
+    "world_effect": "repair_bridge",
+    "next": "cave"
+  },
+  {
+    "id": "cave",
+    "title": "Whispering Cave",
+    "requirement": "LANTERN",
+    "world_effect": "light_cave",
+    "next": "farmland"
+  },
+  {
+    "id": "farmland",
+    "title": "Empty Field",
+    "requirement": "SEEDS",
+    "world_effect": "activate_field",
+    "next": "workshop"
+  },
+  {
+    "id": "workshop",
+    "title": "Broken Workshop",
+    "requirement": "TOOLS",
+    "world_effect": "open_workshop",
+    "next": "boat"
+  },
+  {
+    "id": "boat",
+    "title": "Damaged Boat",
+    "requirement": "ENGINE",
+    "world_effect": "repair_boat",
+    "next": "storage"
+  },
+  {
+    "id": "storage",
+    "title": "Locked Storage",
+    "requirement": "KEY",
+    "world_effect": "unlock_storage",
+    "next": "upgrade"
+  },
+  {
+    "id": "upgrade",
+    "title": "Develop the Village",
+    "requirement": "UPGRADE",
+    "world_effect": "upgrade_object",
+    "next": "endless"
+  }
+]
