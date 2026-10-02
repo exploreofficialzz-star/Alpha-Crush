@@ -1,0 +1,175 @@
+name: Build Android AAB
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+  GODOT_TEMPLATE_VERSION: 4.7.2.stable
+  GODOT_PROJECT_PRESET: Android Internal
+  ANDROID_API_LEVEL: "35"
+  ANDROID_BUILD_TOOLS: 35.0.0
+
+jobs:
+  validate:
+    name: Validate Godot project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot"
+          curl --fail --silent --show-error --location \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" \
+            --output "$RUNNER_TEMP/godot/editor.zip"
+          unzip -q "$RUNNER_TEMP/godot/editor.zip" -d "$RUNNER_TEMP/godot/editor"
+          mv "$RUNNER_TEMP/godot/editor/Godot_v${GODOT_VERSION}_linux.x86_64" "$RUNNER_TEMP/godot/godot"
+          chmod +x "$RUNNER_TEMP/godot/godot"
+          echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
+
+      - name: Import and parse project
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --editor --quit
+
+      - name: Run source audit and static lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/source_audit.py
+          python3 tools/gdlint/run_all.py
+
+      - name: Run Godot test suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/run_tests.gd
+
+  build-android:
+    name: Build signed Android App Bundle
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-${ANDROID_API_LEVEL}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}"
+
+      - name: Install Godot editor and matching export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot" "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}"
+          curl --fail --silent --show-error --location \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" \
+            --output "$RUNNER_TEMP/godot/editor.zip"
+          curl --fail --silent --show-error --location \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz" \
+            --output "$RUNNER_TEMP/godot/templates.tpz"
+          unzip -q "$RUNNER_TEMP/godot/editor.zip" -d "$RUNNER_TEMP/godot/editor"
+          mv "$RUNNER_TEMP/godot/editor/Godot_v${GODOT_VERSION}_linux.x86_64" "$RUNNER_TEMP/godot/godot"
+          chmod +x "$RUNNER_TEMP/godot/godot"
+          echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/godot/templates"
+          unzip -q "$RUNNER_TEMP/godot/templates.tpz" -d "$RUNNER_TEMP/godot/templates"
+          cp -a "$RUNNER_TEMP/godot/templates/templates/." \
+            "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/"
+          mkdir -p android/build
+          unzip -q -o \
+            "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/android_source.zip" \
+            -d android/build
+
+      - name: Decode and validate release keystore
+        shell: bash
+        env:
+          KEY_JKS: ${{ secrets.KEY_JKS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEY_JKS" || { echo "Missing required secret: KEY_JKS" >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing required secret: KEY_ALIAS" >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing required secret: KEY_PASSWORD" >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "Missing required secret: STORE_PASSWORD" >&2; exit 1; }
+          umask 077
+          KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
+          printf '%s' "$KEY_JKS" | base64 --decode --ignore-garbage > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          keytool -list -v \
+            -keystore "$KEYSTORE_PATH" \
+            -alias "$KEY_ALIAS" \
+            -storepass "$STORE_PASSWORD" \
+            | grep -F "Alias name: $KEY_ALIAS"
+          keytool -exportcert \
+            -keystore "$KEYSTORE_PATH" \
+            -alias "$KEY_ALIAS" \
+            -storepass "$STORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            -rfc > /dev/null
+          echo "GODOT_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Import project and export signed AAB
+        shell: bash
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.KEY_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          godot --headless --path . --editor --quit
+          mkdir -p build
+          godot --headless --path . --export-release "$GODOT_PROJECT_PRESET" build/alpha_crush_internal.aab
+          test -s build/alpha_crush_internal.aab
+
+      - name: Upload signed AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-crush-android-${{ github.sha }}
+          path: build/alpha_crush_internal.aab
+          if-no-files-found: error
+          retention-days: 14
