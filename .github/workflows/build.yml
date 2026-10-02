@@ -143,12 +143,29 @@ jobs:
             -storepass "$STORE_PASSWORD" \
             -keypass "$KEY_PASSWORD" \
             -rfc > /dev/null
-          echo "GODOT_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          GODOT_KEYSTORE_PATH="$RUNNER_TEMP/godot-release.keystore"
+          keytool -importkeystore -noprompt \
+            -srckeystore "$KEYSTORE_PATH" \
+            -srcstoretype JKS \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore "$GODOT_KEYSTORE_PATH" \
+            -deststoretype JKS \
+            -deststorepass "$STORE_PASSWORD" \
+            -destalias "$KEY_ALIAS" \
+            -destkeypass "$STORE_PASSWORD"
+          keytool -list \
+            -keystore "$GODOT_KEYSTORE_PATH" \
+            -alias "$KEY_ALIAS" \
+            -storepass "$STORE_PASSWORD" \
+            >/dev/null
+          echo "GODOT_KEYSTORE_PATH=$GODOT_KEYSTORE_PATH" >> "$GITHUB_ENV"
 
       - name: Import project and export signed AAB
         shell: bash
         env:
-          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/godot-release.keystore
           GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.KEY_ALIAS }}
           GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
