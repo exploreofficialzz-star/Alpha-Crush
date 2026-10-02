@@ -110,6 +110,7 @@ jobs:
           cp -a "$RUNNER_TEMP/godot/templates/templates/." \
             "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/"
           mkdir -p android/build
+          cp "$RUNNER_TEMP/godot/templates/templates/version.txt" android/.build_version
           unzip -q -o \
             "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/android_source.zip" \
             -d android/build
