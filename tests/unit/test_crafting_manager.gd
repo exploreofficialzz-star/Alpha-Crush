@@ -14,7 +14,10 @@ static func run() -> bool:
         return false
     if inv.count("wood") != 0 or inv.count("basket") != 1:
         return false
-    inv.capacity = 1
+    inv.remove_item("basket", 1)
+    inv.capacity = 2
     inv.add_item("stone", 1)
+    inv.add_item("wood", 1)
+    inv.capacity = 1
     manager.recipes["crate"] = {"inputs": {"stone": 1}, "output": "crate", "amount": 2}
     return not manager.craft("crate") and inv.count("stone") == 1 and inv.count("crate") == 0

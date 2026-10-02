@@ -1,5 +1,5 @@
 extends Control
-class_name VirtualJoystick
+class_name AlphaCrushVirtualJoystick
 
 signal input_changed(value: Vector2)
 @export var radius := 72.0

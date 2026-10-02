@@ -14,7 +14,7 @@ func request_hint() -> String:
         return "A hint is cooling down. Explore a little more."
     hint_cooldown = 4.0
     if word_system and not word_system.is_complete():
-        var letter := word_system.next_missing_letter()
+        var letter: String = word_system.next_missing_letter()
         var message := "Look for a glowing %s nearby. Follow landmarks and paths." % letter
         hint_ready.emit(message)
         return message
