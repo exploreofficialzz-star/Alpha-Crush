@@ -175,6 +175,11 @@ jobs:
           mkdir -p build
           godot --headless --path . --export-release "$GODOT_PROJECT_PRESET" build/alpha_crush_internal.aab
           test -s build/alpha_crush_internal.aab
+          rm -rf android/build
+          mkdir -p android/build
+          unzip -q -o \
+            "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/android_source.zip" \
+            -d android/build
           godot --headless --path . --export-release "$GODOT_APK_PRESET" build/alpha_crush_internal.apk
           test -s build/alpha_crush_internal.apk
 
