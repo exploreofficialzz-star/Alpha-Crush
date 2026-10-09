@@ -6,6 +6,7 @@ var settings := {
     "quality": "medium",
     "music": true,
     "sfx": true,
+    "avatar_female": false,
     "vibration": true,
     "text_scale": 1.0,
     "high_contrast": false,

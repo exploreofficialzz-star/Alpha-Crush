@@ -18,7 +18,7 @@ godot --headless --path . --import
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-The runner registers 23 suites. It covers inventory stack capacity, word duplicate handling, save schema/migration, daily objectives, persistent world state, economy transactions, transactional crafting, world clock restoration, achievement rewards, deterministic chunk seeds, the
-campaign finale unlock, postgame challenges, market orders, object pooling, weather, and purchase entitlements.
+The runner registers 24 suites. It covers inventory stack capacity, word duplicate handling, save schema/migration, daily objectives, persistent world state, economy transactions, transactional crafting, world clock restoration, achievement rewards, deterministic chunk seeds, the
+campaign finale unlock, postgame challenges, market orders, object pooling, weather, purchase entitlements, and the terrain / sky / avatar-outfit / material helpers of the realism layer.
 
 Release validation must additionally cover network interruption, purchase interruption, ad unavailability, corrupted saves, missing letters, duplicate letters, disconnected chunks, and Android device profiling.

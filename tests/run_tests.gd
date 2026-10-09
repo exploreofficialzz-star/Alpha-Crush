@@ -4,6 +4,7 @@ const SUITE_ACHIEVEMENT_MANAGER = preload("res://tests/unit/test_achievement_man
 const SUITE_AD_SERVICE = preload("res://tests/unit/test_ad_service.gd")
 const SUITE_OBJECT_POOL = preload("res://tests/unit/test_object_pool.gd")
 const SUITE_WEATHER_MANAGER = preload("res://tests/unit/test_weather_manager.gd")
+const SUITE_VISUALS = preload("res://tests/unit/test_visuals.gd")
 const SUITE_CAMPAIGN_MANAGER = preload("res://tests/unit/test_campaign_manager.gd")
 const SUITE_CRAFTING_MANAGER = preload("res://tests/unit/test_crafting_manager.gd")
 const SUITE_CONSENT_MANAGER = preload("res://tests/unit/test_consent_manager.gd")
@@ -30,6 +31,7 @@ func _initialize() -> void:
         ["ad_service", SUITE_AD_SERVICE.run()],
         ["object_pool", SUITE_OBJECT_POOL.run()],
         ["weather_manager", SUITE_WEATHER_MANAGER.run()],
+        ["visuals", SUITE_VISUALS.run()],
         ["campaign_manager", SUITE_CAMPAIGN_MANAGER.run()],
         ["crafting_manager", SUITE_CRAFTING_MANAGER.run()],
         ["consent_manager", SUITE_CONSENT_MANAGER.run()],

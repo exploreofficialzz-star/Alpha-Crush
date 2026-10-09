@@ -36,6 +36,7 @@ var context_timer := 0.0
 var last_context := ""
 var garden_upgrade_visual: Node3D
 var field_crops_spawned := false
+var realistic := false     # true when the generated models/terrain loaded (VillageArt); false = old placeholders
 var cave_ore_spawned := false
 var word_progress: Dictionary = {}
 var harvest_state: Dictionary = {}
@@ -207,8 +208,13 @@ func _build_world() -> void:
     _locked_gate(Vector3(10, 0, -7))
     _build_landmarks()
     _spawn_basic_resources()
+    if realistic:
+        VillageArt.dress_village(self, GameConfig.WORLD_SEED)
 
 func _ground() -> void:
+    realistic = VillageArt.ground(self, GameConfig.WORLD_SEED)
+    if realistic:
+        return
     var body := StaticBody3D.new()
     body.name = "Ground"
     add_child(body)
@@ -227,10 +233,14 @@ func _ground() -> void:
     body.add_child(mesh)
 
 func _home(pos: Vector3) -> void:
+    if VillageArt.home(self, pos):
+        return
     _building("HOME", pos, Vector3(5, 3.5, 4), Color("#d9c8a5"))
     _label(pos + Vector3(0, 4, 0), "HOME")
 
 func _market(pos: Vector3) -> void:
+    if VillageArt.market(self, pos):
+        return
     _building("MARKET", pos, Vector3(6, 3, 4), Color("#cba16e"))
     var label := _label(pos + Vector3(0, 3.6, 0), "CLOSED MARKET  •  REQUIRES OPEN")
     label.name = "ClosedMarketLabel"
@@ -244,12 +254,18 @@ func _market(pos: Vector3) -> void:
     add_child(shutter)
 
 func _garden(pos: Vector3) -> void:
-    _building("GARDEN", pos, Vector3(9, 0.5, 7), Color("#9fbc68"))
-    for i in range(10):
-        var p := pos + Vector3(-4 + i * 0.85, 0, -1 + float(i % 3) * 1.6)
-        _fruit_tree(p, "fruit_%s" % ["apple", "orange", "mango"][i % 3])
+    if not VillageArt.garden(self, pos):
+        _building("GARDEN", pos, Vector3(9, 0.5, 7), Color("#9fbc68"))
+    # trees stand on top of the 0.5 m platform, in two rows with a free lane through the middle
+    var spots := [Vector3(-3.6, 0.5, -1.8), Vector3(-1.8, 0.5, -1.8), Vector3(1.8, 0.5, -1.8), Vector3(3.6, 0.5, -1.8),
+        Vector3(-3.6, 0.5, 0.3), Vector3(-1.8, 0.5, 0.3), Vector3(1.8, 0.5, 0.3), Vector3(3.6, 0.5, 0.3),
+        Vector3(-2.7, 0.5, 2.3), Vector3(2.7, 0.5, 2.3)]
+    for i in range(spots.size()):
+        _fruit_tree(pos + (spots[i] as Vector3), "fruit_%s" % ["apple", "orange", "mango"][i % 3])
 
 func _workshop(pos: Vector3) -> void:
+    if VillageArt.workshop(self, pos):
+        return
     _building("WORKSHOP", pos, Vector3(5, 3.2, 4), Color("#7e8795"))
     var label := _label(pos + Vector3(0, 3.7, 0), "BROKEN WORKSHOP  •  REQUIRES TOOLS")
     label.name = "BrokenWorkshopLabel"
@@ -264,6 +280,8 @@ func _workshop(pos: Vector3) -> void:
     add_child(board)
 
 func _riverland_approach(pos: Vector3) -> void:
+    if VillageArt.river_approach(self, pos):
+        return
     var water := MeshInstance3D.new()
     water.name = "RiverWater"
     var water_mesh := BoxMesh.new()
@@ -307,6 +325,8 @@ func _riverland_approach(pos: Vector3) -> void:
     bridge.add_child(mesh)
 
 func _cave_approach(pos: Vector3) -> void:
+    if VillageArt.cave_approach(self, pos):
+        return
     var cave_label := _label(pos, "CAVE  •  REQUIRES LANTERN")
     cave_label.name = "CaveRequirementLabel"
     var rock := MeshInstance3D.new()
@@ -320,6 +340,8 @@ func _cave_approach(pos: Vector3) -> void:
     add_child(rock)
 
 func _field(pos: Vector3) -> void:
+    if VillageArt.field(self, pos):
+        return
     var plot := MeshInstance3D.new()
     plot.name = "EmptyField"
     var plot_mesh := BoxMesh.new()
@@ -340,6 +362,8 @@ func _field(pos: Vector3) -> void:
     label.name = "EmptyFieldLabel"
 
 func _boat(pos: Vector3) -> void:
+    if VillageArt.boat(self, pos):
+        return
     var boat := Node3D.new()
     boat.name = "DamagedBoat"
     boat.position = pos
@@ -364,6 +388,8 @@ func _boat(pos: Vector3) -> void:
     label.name = "DamagedBoatLabel"
 
 func _storage(pos: Vector3) -> void:
+    if VillageArt.storage(self, pos):
+        return
     var storage := Node3D.new()
     storage.name = "LockedStorage"
     storage.position = pos
@@ -387,6 +413,8 @@ func _storage(pos: Vector3) -> void:
     label.name = "LockedStorageLabel"
 
 func _repair_bridge_approach(pos: Vector3) -> void:
+    if VillageArt.repair_bridge_approach(self, pos):
+        return
     var bridge := Node3D.new()
     bridge.name = "BrokenFootbridge"
     bridge.position = pos
@@ -404,6 +432,8 @@ func _repair_bridge_approach(pos: Vector3) -> void:
     label.name = "RepairBridgeLabel"
 
 func _closed_dock(pos: Vector3) -> void:
+    if VillageArt.closed_dock(self, pos):
+        return
     var dock := Node3D.new()
     dock.name = "ClosedDock"
     dock.position = pos
@@ -429,6 +459,8 @@ func _closed_dock(pos: Vector3) -> void:
     label.name = "ClosedDockLabel"
 
 func _old_gate(pos: Vector3) -> void:
+    if VillageArt.old_gate(self, pos):
+        return
     var gate := Node3D.new()
     gate.name = "LockedMeadowGate"
     gate.position = pos
@@ -453,6 +485,8 @@ func _old_gate(pos: Vector3) -> void:
     label.name = "OldGateLabel"
 
 func _dark_beacon(pos: Vector3) -> void:
+    if VillageArt.dark_beacon(self, pos):
+        return
     var beacon := Node3D.new()
     beacon.name = "DarkBeacon"
     beacon.position = pos
@@ -489,13 +523,14 @@ func _locked_gate(pos: Vector3) -> void:
     shape.shape = box
     shape.position.y = 1.5
     gate.add_child(shape)
-    var mesh := MeshInstance3D.new()
-    var cube := BoxMesh.new()
-    cube.size = Vector3(4, 3, 0.6)
-    mesh.mesh = cube
-    mesh.position.y = 1.5
-    mesh.material_override = _mat(Color("#48535d"))
-    gate.add_child(mesh)
+    if not VillageArt.locked_garden_gate(self, pos):
+        var mesh := MeshInstance3D.new()
+        var cube := BoxMesh.new()
+        cube.size = Vector3(4, 3, 0.6)
+        mesh.mesh = cube
+        mesh.position.y = 1.5
+        mesh.material_override = _mat(Color("#48535d"))
+        gate.add_child(mesh)
     _label(pos + Vector3(0, 3.4, 0), "REQUIRES: LADDER")
 
 func _build_landmarks() -> void:
@@ -546,6 +581,8 @@ func _building(id: String, pos: Vector3, size: Vector3, color: Color) -> void:
     body.add_child(mesh)
 
 func _path(pos: Vector3, _dir: Vector3, length: float) -> void:
+    if VillageArt.path(self, pos, length):
+        return
     var mesh := MeshInstance3D.new()
     var cube := BoxMesh.new()
     cube.size = Vector3(3, 0.08, length)
@@ -555,6 +592,8 @@ func _path(pos: Vector3, _dir: Vector3, length: float) -> void:
     add_child(mesh)
 
 func _tree(pos: Vector3) -> void:
+    if VillageArt.tree(self, pos):
+        return
     var root := Node3D.new()
     root.position = pos
     add_child(root)
@@ -577,7 +616,8 @@ func _tree(pos: Vector3) -> void:
     root.add_child(crown)
 
 func _fruit_tree(pos: Vector3, item_id: String) -> void:
-    _tree(pos)
+    if not VillageArt.fruit_tree(self, pos):
+        _tree(pos)
     var fruit: HarvestNode = preload("res://world/harvesting/harvest_node.gd").new()
     add_child(fruit)
     fruit.global_position = pos
@@ -827,6 +867,8 @@ func _complete_postgame_word(word: String) -> void:
     _clear_current_word()
 
 func _community_hall(pos: Vector3) -> void:
+    if VillageArt.community_hall(self, pos):
+        return
     _building("COMMUNITY_HALL", pos, Vector3(7, 3.8, 5), Color("#8f98a8"))
     _label(pos + Vector3(0, 4.3, 0), "COMMUNITY HALL")
     var banner := MeshInstance3D.new()
@@ -1297,6 +1339,8 @@ func _complete_boat_route() -> void:
     _clear_current_word()
 
 func _build_open_dock_visual() -> void:
+    if VillageArt.open_dock(self, DOCK_POS):
+        return
     if get_node_or_null("OpenDock"):
         return
     var open_dock := Node3D.new()
@@ -1329,6 +1373,8 @@ func _complete_old_gate() -> void:
 func _build_meadow_gate_path_visual() -> void:
     if get_node_or_null("MeadowGatePath"):
         return
+    if VillageArt.path(self, OLD_GATE_POS + Vector3(0, 0, 6.0), 12.0, "MeadowGatePath"):
+        return
     var path := MeshInstance3D.new()
     path.name = "MeadowGatePath"
     var path_mesh := BoxMesh.new()
@@ -1345,6 +1391,7 @@ func _complete_beacon_light() -> void:
     _clear_current_word()
 
 func _build_beacon_light_visual() -> void:
+    VillageArt.set_beacon_lit(self, true)
     var lamp := get_node_or_null("DarkBeacon/BeaconLamp") as MeshInstance3D
     if lamp:
         var material := StandardMaterial3D.new()
@@ -1470,6 +1517,8 @@ func _build_cave_ore() -> void:
         resource_nodes.append(deposit)
 
 func _build_usable_boat() -> void:
+    if VillageArt.usable_boat(self, BOAT_POS):
+        return
     if get_node_or_null("UsableBoat"):
         return
     var boat := Node3D.new()
@@ -1512,6 +1561,8 @@ func _unlock_storage_visual() -> void:
         unlocked_label.name = "UnlockedStorageLabel"
 
 func _build_repaired_footbridge(pos: Vector3) -> void:
+    if VillageArt.repaired_footbridge(self, pos):
+        return
     var bridge := StaticBody3D.new()
     bridge.name = "RepairedFootbridge"
     bridge.position = pos
@@ -1567,6 +1618,8 @@ func _on_resource_harvested(item_id: String, amount: int) -> void:
     discovery_message.emit("Harvested %s x%d" % [item_id, amount])
 
 func _ladder(pos: Vector3) -> void:
+    if VillageArt.garden_ladder(self, pos):
+        return
     var root := Node3D.new()
     root.name = "GardenLadder"
     root.position = pos
@@ -1594,6 +1647,8 @@ func _ladder(pos: Vector3) -> void:
         root.add_child(rung)
 
 func _bridge(pos: Vector3) -> void:
+    if VillageArt.restored_bridge(self, pos):
+        return
     var bridge := StaticBody3D.new()
     bridge.name = "RestoredBridge"
     bridge.position = pos

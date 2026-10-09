@@ -149,6 +149,12 @@ if lint.exists():
     if result.returncode != 0:
         errors.append('gdlint failed:\n' + result.stdout[-1500:])
 
+asset_audit = ROOT / 'tests' / 'asset_audit.py'
+if asset_audit.exists():
+    result = subprocess.run([sys.executable, str(asset_audit)], capture_output=True, text=True)
+    if result.returncode != 0:
+        errors.append('asset audit failed:\n' + result.stdout[-1500:])
+
 if errors:
     print('SOURCE AUDIT FAILED')
     for error in errors:

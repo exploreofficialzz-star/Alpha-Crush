@@ -84,6 +84,23 @@ for path, c in files.items():
                     req, tot = func_arity(fd)
                     if len(a) < req or len(a) > tot:
                         findings.append(('D', path, n, f'`{t}.{member}()` expects {req}..{tot} args, got {len(a)}'))
+        # static / class-qualified calls: ClassName.func(args) and ClassName.CONST
+        for mm in re.finditer(r'(?<![\w\.])([A-Z]\w*)\.([A-Za-z_]\w*)(\s*\()?', sc):
+            cname, member, paren = mm.group(1), mm.group(2), mm.group(3)
+            rc = classes.get(cname)
+            if rc is None or cname == c.name: continue
+            if member in ('new', 'free', 'get_script', 'duplicate'): continue
+            if not has_member(rc, member):
+                if member in NODE_API or member in NODE_PROPS: continue
+                findings.append(('C', path, n, f'class `{cname}` has no member `{member}`'))
+                continue
+            if paren:
+                fd = find_func(rc, member)
+                if fd:
+                    a, end = args_of(sc[mm.end() - 1:])
+                    req, tot = func_arity(fd)
+                    if len(a) < req or len(a) > tot:
+                        findings.append(('D', path, n, f'`{cname}.{member}()` expects {req}..{tot} args, got {len(a)}'))
         # emit arity on own / typed signals
         for mm in re.finditer(r'(?<![\w\.])(?:(self|[a-z_]\w*)\.)?([a-z_]\w*)\.emit\s*\(', sc):
             recv, sig = mm.group(1), mm.group(2)

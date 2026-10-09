@@ -20,6 +20,12 @@ var carried_letters: Array[LetterObject] = []
 var visual_root: Node3D
 var name_label: Label3D
 var profile_style := "default"
+signal footstep
+
+var rig: AvatarRig
+var _step_distance := 0.0
+var body_type := "male"
+var _avatar_seed := 1
 
 const LIMB_PHASE := {"LeftArm": 1.0, "RightLeg": 1.0, "RightArm": -1.0, "LeftLeg": -1.0}
 
@@ -40,6 +46,44 @@ func _build_body() -> void:
     shape.shape = capsule
     shape.position.y = 0.9
     add_child(shape)
+    if not _build_rig():
+        _build_fallback_body()
+    name_label = Label3D.new()
+    name_label.text = "EXPLORER"
+    name_label.font_size = 16
+    name_label.outline_size = 6
+    name_label.position = Vector3(0, 2.2 if rig != null else 2.45, 0)
+    name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    visual_root.add_child(name_label)
+    carry_socket = Node3D.new()
+    carry_socket.name = "CarrySocket"
+    carry_socket.position = Vector3(0, 1.25, -0.55)
+    add_child(carry_socket)
+
+func _build_rig() -> bool:
+    var candidate := AvatarRig.new()
+    candidate.name = "AvatarRig"
+    visual_root.add_child(candidate)
+    if candidate.build(body_type, AvatarRig.outfit_for(profile_style, _avatar_seed)):
+        rig = candidate
+        return true
+    visual_root.remove_child(candidate)
+    candidate.free()
+    return false
+
+## Switch between the male and female base model at runtime (settings toggle).
+func set_body_type(value: String) -> void:
+    if value == body_type or visual_root == null:
+        return
+    body_type = value
+    if rig != null:
+        visual_root.remove_child(rig)
+        rig.free()
+        rig = null
+    if not _build_rig():
+        body_type = "male" if value != "male" else value
+
+func _build_fallback_body() -> void:
     var body := MeshInstance3D.new()
     var cap := CapsuleMesh.new()
     cap.radius = 0.38
@@ -48,22 +92,10 @@ func _build_body() -> void:
     body.position.y = 0.9
     body.material_override = _mat(Color("#24364b"))
     visual_root.add_child(body)
-    var left_arm := _limb("LeftArm", Vector3(-0.52, 1.0, 0), Vector3(0.16, 0.75, 0.16))
-    var right_arm := _limb("RightArm", Vector3(0.52, 1.0, 0), Vector3(0.16, 0.75, 0.16))
-    var left_leg := _limb("LeftLeg", Vector3(-0.18, 0.25, 0), Vector3(0.18, 0.9, 0.18))
-    var right_leg := _limb("RightLeg", Vector3(0.18, 0.25, 0), Vector3(0.18, 0.9, 0.18))
-    visual_root.add_child(left_arm)
-    visual_root.add_child(right_arm)
-    visual_root.add_child(left_leg)
-    visual_root.add_child(right_leg)
-    name_label = Label3D.new()
-    name_label.text = "EXPLORER"
-    name_label.font_size = 16
-    name_label.outline_size = 6
-    name_label.position = Vector3(0, 2.45, 0)
-    name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    visual_root.add_child(name_label)
-
+    visual_root.add_child(_limb("LeftArm", Vector3(-0.52, 1.0, 0), Vector3(0.16, 0.75, 0.16)))
+    visual_root.add_child(_limb("RightArm", Vector3(0.52, 1.0, 0), Vector3(0.16, 0.75, 0.16)))
+    visual_root.add_child(_limb("LeftLeg", Vector3(-0.18, 0.25, 0), Vector3(0.18, 0.9, 0.18)))
+    visual_root.add_child(_limb("RightLeg", Vector3(0.18, 0.25, 0), Vector3(0.18, 0.9, 0.18)))
     var head := MeshInstance3D.new()
     var sphere := SphereMesh.new()
     sphere.radius = 0.3
@@ -72,10 +104,6 @@ func _build_body() -> void:
     head.position = Vector3(0, 2, 0)
     head.material_override = _mat(Color("#c98d6b"))
     visual_root.add_child(head)
-    carry_socket = Node3D.new()
-    carry_socket.name = "CarrySocket"
-    carry_socket.position = Vector3(0, 1.25, -0.55)
-    add_child(carry_socket)
 
 func _limb(limb_name: String, pos: Vector3, size: Vector3) -> MeshInstance3D:
     var limb := MeshInstance3D.new()
@@ -128,6 +156,13 @@ func _physics_process(delta: float) -> void:
     elif Input.is_action_just_pressed("jump"):
         velocity.y = jump_velocity
     move_and_slide()
+    if is_on_floor():
+        var planar := Vector2(velocity.x, velocity.z).length()
+        if planar > 0.6:
+            _step_distance += planar * delta
+            if _step_distance >= (2.4 if planar > 4.0 else 1.7):
+                _step_distance = 0.0
+                footstep.emit()
     if global_position.y < -30.0:
         # Safety net: never leave the player in endless freefall (e.g. a chunk that failed to load).
         global_position = Vector3(0.0, 2.0, 10.0)
@@ -143,6 +178,8 @@ func interact() -> void:
     if interact_cooldown > 0.0 or interaction_source == null:
         return
     interact_cooldown = 0.2
+    if rig != null:
+        rig.play_reach()
     interaction_source.call("try_interact", self)
     if settings and bool(settings.get_value("vibration", true)):
         Input.vibrate_handheld(25)
@@ -185,6 +222,10 @@ func clear_carried_letters() -> void:
 func _animate_body(delta: float, movement: float) -> void:
     if visual_root == null:
         return
+    if rig != null:
+        rig.carrying = not carried_letters.is_empty()
+        rig.animate(delta, Vector2(velocity.x, velocity.z).length(), is_on_floor(), Input.is_action_pressed("sprint") or mobile_sprint, velocity.y)
+        return
     var cadence := Time.get_ticks_msec() * 0.012
     var swing: float = sin(cadence) * minf(1.0, movement) * 0.22
     for child in visual_root.get_children():
@@ -199,8 +240,12 @@ func apply_profile(profile: PlayerProfileManager) -> void:
     if profile == null:
         return
     profile_style = str(profile.avatar_style)
+    _avatar_seed = absi(hash(str(profile.display_name))) + 1
     if name_label:
         name_label.text = str(profile.display_name).to_upper()
+    if rig != null:
+        rig.apply_outfit(AvatarRig.outfit_for(profile_style, _avatar_seed))
+        return
     var palette := {
         "default": Color("#24364b"),
         "sunrise": Color("#b16b42"),

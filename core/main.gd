@@ -42,6 +42,7 @@ var world_authority: WorldAuthority
 var autosave: Timer
 var world_environment: Environment
 var sun_light: DirectionalLight3D
+var atmosphere: Atmosphere
 
 func _ready() -> void:
     _setup_input()
@@ -49,8 +50,8 @@ func _ready() -> void:
     _create_services()
     _restore_save()
     _apply_runtime_settings()
-    _apply_world_ambience()
     _create_player()
+    _create_atmosphere()
     _create_world()
     _create_hud()
     _apply_runtime_settings()
@@ -262,7 +263,7 @@ func _create_world() -> void:
     chunk_streamer = preload("res://world/generation/chunk_streamer.gd").new()
     chunk_streamer.name = "ChunkStreamer"
     world.add_child(chunk_streamer)
-    chunk_streamer.setup(player, GameConfig.WORLD_SEED, map_manager)
+    chunk_streamer.setup(player, GameConfig.WORLD_SEED, map_manager, quality)
 
     hints.world = world
     hints.word_system = word_system
@@ -580,24 +581,18 @@ func _key_action(action: String, keycode: Key) -> void:
     InputMap.action_add_event(action, event)
 
 func _setup_environment() -> void:
-    var env := WorldEnvironment.new()
-    var e := Environment.new()
-    e.background_mode = Environment.BG_COLOR
-    e.background_color = Color("#83bfd3")
-    e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    e.ambient_light_color = Color("#dceff0")
-    e.ambient_light_energy = 0.85
-    e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-    env.environment = e
-    world_environment = e
-    add_child(env)
-    var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-48, -28, 0)
-    sun.light_energy = 1.15
-    sun.shadow_enabled = true
-    sun_light = sun
-    add_child(sun)
-    _apply_world_ambience()
+    # Sky, sun, fog and tone-mapping are owned by Atmosphere, which needs the player and clock (see _create_atmosphere).
+    pass
+
+func _create_atmosphere() -> void:
+    atmosphere = Atmosphere.new()
+    atmosphere.name = "Atmosphere"
+    atmosphere.setup(player, clock, weather, quality)
+    atmosphere.audio = audio
+    player.footstep.connect(func(): audio.play_footstep())
+    add_child(atmosphere)
+    world_environment = atmosphere.environment
+    sun_light = atmosphere.sun
 
 func _apply_runtime_settings() -> void:
     if settings == null:
@@ -609,45 +604,12 @@ func _apply_runtime_settings() -> void:
         quality.apply(str(settings.get_value("quality", "medium")))
     if player:
         player.camera_sensitivity = clampf(float(settings.get_value("camera_sensitivity", 1.0)), 0.5, 2.0)
+        player.set_body_type("female" if bool(settings.get_value("avatar_female", false)) else "male")
     if hud:
         hud.apply_accessibility()
 
 func _apply_world_ambience() -> void:
-    if world_environment == null or sun_light == null or clock == null or weather == null:
-        return
-    var period := str(clock.period)
-    var light_energy := 1.0
-    var sky := Color("#83bfd3")
-    var ambient := Color("#dceff0")
-    match period:
-        "morning":
-            light_energy = 0.78
-            sky = Color("#e5b98f")
-            ambient = Color("#e8c9a8")
-            sun_light.rotation_degrees = Vector3(-18, -35, 0)
-        "day":
-            light_energy = 1.2
-            sky = Color("#83bfd3")
-            ambient = Color("#dceff0")
-            sun_light.rotation_degrees = Vector3(-58, -28, 0)
-        "evening":
-            light_energy = 0.72
-            sky = Color("#d98c74")
-            ambient = Color("#c99a8a")
-            sun_light.rotation_degrees = Vector3(-12, 145, 0)
-        "night":
-            light_energy = 0.22
-            sky = Color("#17253e")
-            ambient = Color("#53627e")
-            sun_light.rotation_degrees = Vector3(12, 145, 0)
-    match str(weather.weather):
-        "cloudy":
-            light_energy *= 0.72
-            sky = sky.darkened(0.12)
-        "rain":
-            light_energy *= 0.48
-            sky = sky.darkened(0.25)
-            ambient = ambient.darkened(0.12)
-    sun_light.light_energy = light_energy
-    world_environment.background_color = sky
-    world_environment.ambient_light_color = ambient
+    # Atmosphere follows the world clock and weather every frame; nothing to switch on period changes anymore.
+    if atmosphere != null:
+        atmosphere.set_process(true)
+

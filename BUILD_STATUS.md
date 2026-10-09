@@ -52,13 +52,18 @@ This repository is being built systematically from `ALPHA_CRUSH_MASTER_GODOT_BUI
 - Advanced save schema to v8 and synchronized release metadata to 1.6.0 / Android version code 11.
 
 ## Source inventory
-- 81 GDScript files
+- 89 GDScript files + 6 shaders (`visuals/shaders/`)
 - 92 generated SVG assets plus the project icon SVG
 - 15 original WAV files (SFX and music)
 - 1 cinematic key-art PNG
 - 13 JSON data sets
-- 23 unit/integration test suites registered in the headless test runner
+- 24 unit/integration test suites registered in the headless test runner
 - `tools/gdlint`: engine-free static checker wired into `tests/source_audit.py`
+
+## Realism pass (2.1.0, no engine available)
+Procedural PBR art pipeline (`tools/assetgen`, `ASSET_PIPELINE.md`): 56 generated models, 44 textures, 6 shaders, ambience beds,
+rebuilt village / terrain / vegetation / avatar / animals / sky. Statically checked (`tests/source_audit.py` now also runs
+`tests/asset_audit.py`); **not yet run in the engine**.
 
 ## Debug audit pass (2.0.0, no engine available)
 A full static audit fixed defects that would have stopped the project from loading, compiling or being

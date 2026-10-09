@@ -19,7 +19,6 @@ var consent: ConsentManager
 var ads: AdService
 var purchases: PurchaseService
 var map_view: MapView
-var joystick_control: AlphaCrushVirtualJoystick
 var camera_drag: CameraDrag
 
 var status_panel: PanelContainer
@@ -34,7 +33,7 @@ var crafting_panel: PanelContainer
 var settings_panel: PanelContainer
 var map_dirty := true
 var message_timer := 0.0
-var joystick: AlphaCrushVirtualJoystick
+var joystick: Control
 
 func _ready() -> void:
     layer = 20
@@ -86,11 +85,11 @@ func _build_hud() -> void:
     _add_button("Save", Vector2(16, 428), "save")
     _add_button("Settings", Vector2(16, 476), "settings")
 
-    joystick_control = preload("res://ui/mobile/virtual_joystick.gd").new()
-    joystick_control.position = Vector2(30, 520)
-    joystick_control.size = Vector2(165, 165)
-    add_child(joystick_control)
-    joystick_control.input_changed.connect(_on_joystick)
+    joystick = preload("res://ui/mobile/virtual_joystick.gd").new()
+    joystick.position = Vector2(30, 520)
+    joystick.size = Vector2(165, 165)
+    add_child(joystick)
+    joystick.input_changed.connect(_on_joystick)
     camera_drag = preload("res://ui/mobile/camera_drag.gd").new()
     camera_drag.position = Vector2(820, 500)
     camera_drag.size = Vector2(280, 170)
@@ -269,6 +268,7 @@ func refresh_settings() -> void:
     _add_setting_toggle(box, "Music", "music", true)
     _add_setting_toggle(box, "Sound effects", "sfx", true)
     _add_setting_toggle(box, "Vibration", "vibration", true)
+    _add_setting_toggle(box, "Female character", "avatar_female", false)
     _add_setting_toggle(box, "High contrast", "high_contrast", false)
     _add_setting_slider(box, "Text size", "text_scale", 0.8, 1.5, 0.1, 1.0)
     _add_setting_slider(box, "Camera sensitivity", "camera_sensitivity", 0.5, 2.0, 0.1, 1.0)

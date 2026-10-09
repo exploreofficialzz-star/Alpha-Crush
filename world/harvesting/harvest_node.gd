@@ -12,7 +12,7 @@ var available := true
 var cooldown := 0.0
 var respawn_seconds := 20.0
 var resource_state := "ACTIVE"
-var visual_mesh: MeshInstance3D
+var visual_mesh: Node3D
 var visual_label: Label3D
 
 func setup(id: String, count: int, label_text: String) -> void:
@@ -28,13 +28,7 @@ func setup(id: String, count: int, label_text: String) -> void:
     sphere.radius = 0.75
     shape.shape = sphere
     add_child(shape)
-    visual_mesh = MeshInstance3D.new()
-    var sphere_mesh := SphereMesh.new()
-    sphere_mesh.radius = 0.28
-    sphere_mesh.height = 0.56
-    visual_mesh.mesh = sphere_mesh
-    visual_mesh.material_override = _material_for_item(id)
-    visual_mesh.position.y = 1.6
+    visual_mesh = _build_visual(id)
     add_child(visual_mesh)
     visual_label = Label3D.new()
     visual_label.text = display_name
@@ -44,6 +38,40 @@ func setup(id: String, count: int, label_text: String) -> void:
     visual_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     add_child(visual_label)
     set_available(true)
+
+const MODEL_FOR_ITEM := {"wood": "res_wood", "stone": "res_stone", "ore": "res_ore", "fruit_apple": "res_apple", "fruit_orange": "res_orange",
+    "fruit_mango": "res_mango", "crop_wheat": "crop_wheat"}
+# fruit hangs in a small cluster just off the trunk, where the player can see and reach it
+const FRUIT_OFFSETS := [Vector3(0.62, 1.75, 0.10), Vector3(0.50, 1.48, -0.30), Vector3(0.82, 1.58, -0.12)]
+
+func _build_visual(id: String) -> Node3D:
+    var model_id := str(MODEL_FOR_ITEM.get(id, ""))
+    if model_id != "" and PropFactory.has_model(model_id):
+        var root := Node3D.new()
+        root.name = "Visual"
+        if id.begins_with("fruit_"):
+            for off in FRUIT_OFFSETS:
+                var fruit := PropFactory.spawn(model_id, false, true)
+                if fruit != null:
+                    fruit.position = off
+                    root.add_child(fruit)
+        else:
+            var item := PropFactory.spawn(model_id, false, true)
+            if item != null:
+                item.position.y = 0.04
+                root.add_child(item)
+        if root.get_child_count() > 0:
+            return root
+        root.free()
+    # placeholder when the generated models are not available
+    var mesh := MeshInstance3D.new()
+    var sphere_mesh := SphereMesh.new()
+    sphere_mesh.radius = 0.28
+    sphere_mesh.height = 0.56
+    mesh.mesh = sphere_mesh
+    mesh.material_override = _material_for_item(id)
+    mesh.position.y = 1.6
+    return mesh
 
 func _material_for_item(id: String) -> Material:
     var material := StandardMaterial3D.new()

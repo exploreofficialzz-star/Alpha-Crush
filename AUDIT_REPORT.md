@@ -70,3 +70,22 @@ Modified: `project.godot`, `export_presets.cfg`, `core/main.gd`, `core/services/
 `world/world.gd`, `world/generation/{chunk_streamer,seeded_generator}.gd`, `world/harvesting/harvest_node.gd`,
 `world/simulation/animal_agent.gd`, `world/weather/weather_manager.gd`, `tests/*` (see above), docs.
 Added: `multiplayer/network_status.gd`, `tests/unit/test_object_pool.gd`, `tests/unit/test_weather_manager.gd`, `tools/gdlint/*`.
+
+---
+
+# Addendum — 2.1.0 realism pass
+Scope: all art assets, environments, the human avatar and animals were rebuilt (see `ASSET_PIPELINE.md`).
+Because this was again done without an engine, the new code was held to the same standard: `tools/gdlint` (now also
+checking class-qualified static calls and typed-array / packed-array element types), `tests/asset_audit.py`
+(every model, texture, shader, audio file, marker name and referenced model id), a new engine-side suite
+(`tests/unit/test_visuals.gd`) and offline renders of every generated asset (`docs/previews/`).
+
+Defects found and fixed while building it (all by inspection / planted-bug verification of the checkers):
+* collision markers named with decimals (`COL_BOX_5.40_...`) would have lost their `.` in Godot — now integer centimetres;
+* the footbridge was too short for the river and its deck ends were higher than the player can step — rebuilt (10.5 m, arch ≤ 20 cm, stepped colliders), garden platform given 10 cm risers;
+* roof wall-plate beams poked through the sloped roof at the eaves (found by an ID-buffer render);
+* single-root models (mesh on the scene root) were skipped when applying materials — root now processed;
+* the old streamed-terrain winding bug is covered by a regression test on the new `TerrainField` patches;
+* `:=` inference on loop variables / packed arrays, `Array.append_array` implicit conversions, a lambda-in-argument-list pattern.
+
+Not verified (needs the engine): shader compilation, import of the GLB/texture set, visual quality in motion, performance on devices.

@@ -20,7 +20,7 @@ min max clamp abs sign lerp lerpf lerp_angle sin cos tan asin acos atan atan2 si
 randi randf randf_range randi_range randomize seed rand_from_seed maxi mini clampi maxf minf clampf absf absi signf signi snappedf snappedi snapped
 move_toward is_instance_valid is_instance_id_valid preload load assert typeof deg_to_rad rad_to_deg fposmod posmod fmod floori ceili roundi
 floorf ceilf roundf wrapf wrapi wrap is_equal_approx is_zero_approx inverse_lerp remap smoothstep ease hash var_to_str str_to_var
-is_nan is_inf is_finite error_string type_string instance_from_id weakref get_stack char ord bytes_to_var var_to_bytes
+is_nan is_inf is_finite linear_to_db db_to_linear lerp_angle cubic_interpolate bezier_interpolate error_string type_string instance_from_id weakref get_stack char ord bytes_to_var var_to_bytes
 Vector2 Vector3 Vector2i Vector3i Vector4 Color Rect2 Rect2i Basis Transform2D Transform3D Quaternion AABB Plane NodePath StringName
 Callable Signal Array Dictionary PackedVector3Array PackedVector2Array PackedStringArray PackedInt32Array PackedFloat32Array PackedByteArray
 Projection RID Object super await if elif else while for match return not and or in as is'''.split())

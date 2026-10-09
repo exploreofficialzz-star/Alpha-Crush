@@ -153,6 +153,14 @@ def resolve(expr, c, locals_, depth=0):
         return None
     # index
     if e.endswith(']'):
+        im = re.match(r'^([\w\.]+)\[', e)
+        if im:
+            bt = resolve(im.group(1), c, locals_)
+            elem = {'PackedVector3Array': 'Vector3', 'PackedVector2Array': 'Vector2', 'PackedInt32Array': 'int', 'PackedInt64Array': 'int',
+                    'PackedFloat32Array': 'float', 'PackedFloat64Array': 'float', 'PackedStringArray': 'String', 'PackedColorArray': 'Color'}
+            if bt in elem: return elem[bt]
+            am = re.match(r'Array\[(\w+)\]', bt or '')
+            if am: return am.group(1)
         return 'Variant'
     return None
 
@@ -259,8 +267,18 @@ for path, c in files.items():
                     pm = re.match(r'(\w+)\s*(?::\s*([\w\.\[\]]+))?', p)
                     if pm: locals_[pm.group(1)] = pm.group(2)
             continue
-        m = re.match(r'(?:for\s+(\w+)\s+in)', s)
-        if m: locals_[m.group(1)] = None
+        m = re.match(r'for\s+(\w+)\s+in\s+(.*):\s*$', s)
+        if m:
+            # GDScript 4 types the loop variable of `for x in range(...)` as int
+            it = m.group(2).strip()
+            et = None
+            if it.startswith('range('):
+                et = 'int'
+            else:
+                at = resolve(it, c, locals_) if re.match(r'^[\w\.]+$', it) else None
+                am = re.match(r'Array\[(\w+)\]', at or '')
+                if am: et = am.group(1)
+            locals_[m.group(1)] = et
         m = re.match(r'(?:@\w+(?:\([^)]*\))?\s+)*(var|const)\s+(\w+)\s*(?::\s*([\w\.\[\]]+))?\s*(:?=)\s*(.*)$', s)
         if m:
             kind, name, typ, op, rhs = m.groups()

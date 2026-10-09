@@ -10,6 +10,7 @@ var phase := 0.0
 var wander_radius := 4.0
 var body_material: Material
 var dialogue_cooldown := 0.0
+var rig: AvatarRig
 
 func setup(pos: Vector3, npc_role: String, npc_name: String = "Human") -> void:
     global_position = pos
@@ -28,6 +29,28 @@ func _build_body() -> void:
     shape.shape = capsule
     shape.position.y = 0.75
     add_child(shape)
+    var label_y := 2.4
+    var candidate := AvatarRig.new()
+    candidate.name = "AvatarRig"
+    add_child(candidate)
+    var seed_value := absi(hash(display_name + role)) + 3
+    var gender := "female" if (role == "gardener" or role == "builder" or seed_value % 2 == 0) else "male"
+    if candidate.build(gender, AvatarRig.outfit_for(role, seed_value)):
+        rig = candidate
+        label_y = 2.15
+    else:
+        remove_child(candidate)
+        candidate.free()
+        _build_fallback_visual()
+    var label := Label3D.new()
+    label.text = display_name
+    label.font_size = 18
+    label.outline_size = 6
+    label.position.y = label_y
+    label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    add_child(label)
+
+func _build_fallback_visual() -> void:
     var body := MeshInstance3D.new()
     var capsule_mesh := CapsuleMesh.new()
     capsule_mesh.radius = 0.3
@@ -46,13 +69,6 @@ func _build_body() -> void:
     head.position = Vector3(0, 1.8, 0)
     head.material_override = _material(Color("#c98d6b"))
     add_child(head)
-    var label := Label3D.new()
-    label.text = display_name
-    label.font_size = 18
-    label.outline_size = 6
-    label.position.y = 2.4
-    label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    add_child(label)
 
 func interact() -> void:
     var lines := {
@@ -93,6 +109,8 @@ func _physics_process(delta: float) -> void:
         rotation.y = lerp_angle(rotation.y, atan2(-offset.x, -offset.z), delta * 3.0)
     else:
         velocity = Vector3.ZERO
+    if rig != null:
+        rig.animate(delta, Vector2(velocity.x, velocity.z).length(), true, false, 0.0)
 
 func _material(c: Color) -> Material:
     var m := StandardMaterial3D.new()

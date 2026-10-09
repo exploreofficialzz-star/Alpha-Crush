@@ -34,3 +34,8 @@ The current environment has no Godot editor/runtime or Android SDK. Therefore th
 
 
 The repository also includes canonical monetization configuration, explicit ad-consent persistence, store/restore controls, reward verification boundaries, original procedural music loops, persistent player profile/customization data, a multi-opportunity registry, a Settings & Accessibility panel, LAN multiplayer host/join/leave controls, and persisted inventory capacity and resource refresh state.
+
+## 2.1.0 — Realism pass
+The world, human avatar, animals, sky and soundscape were rebuilt on a procedural PBR art pipeline.
+See `ASSET_PIPELINE.md` (what is generated, how to regenerate, honest limits) and `docs/previews/` (offline renders).
+First run on a fresh clone: `godot --headless --path . --import`, then open the project.
