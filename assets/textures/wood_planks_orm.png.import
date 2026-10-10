@@ -5,7 +5,7 @@ type="CompressedTexture2D"
 uid="uid://bj3hthr2w7q5p"
 path="res://.godot/imported/wood_planks_orm.png-37cec63a8d5570749a9d24edf69f5105.ctex"
 metadata={
-"vram_texture": false
+"vram_texture": true
 }
 
 [deps]
@@ -15,7 +15,7 @@ dest_files=["res://.godot/imported/wood_planks_orm.png-37cec63a8d5570749a9d24edf
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

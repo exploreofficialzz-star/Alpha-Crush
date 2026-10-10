@@ -13,4 +13,8 @@ static func run() -> bool:
     if not rewards.is_empty():
         return false
     service.complete_rewarded("coins", true)
-    return rewards == ["coins"]
+    if rewards != ["coins"]:
+        return false
+    # Children's build: no full-screen interstitials, ever.
+    service.child_directed = true
+    return not service.show_interstitial()

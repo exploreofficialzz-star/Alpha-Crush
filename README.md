@@ -39,3 +39,10 @@ The repository also includes canonical monetization configuration, explicit ad-c
 The world, human avatar, animals, sky and soundscape were rebuilt on a procedural PBR art pipeline.
 See `ASSET_PIPELINE.md` (what is generated, how to regenerate, honest limits) and `docs/previews/` (offline renders).
 First run on a fresh clone: `godot --headless --path . --import`, then open the project.
+
+## 2.2.0 — Kid-friendly, low-end-ready release
+Picture-first HUD (right-thumb floating stick, big context-aware action button, goal bubble made of
+pictures, guide arrows, wordless tutorial), boy/girl hero choice, larger hero and closer camera, game
+icon + splash replacing the Godot logo, automatic graphics tiers with a frame-rate governor, VRAM-compressed
+textures, parental gate for settings that can spend money or touch the network, Android API 36 /
+32-bit ARM export fixes. Full notes, audit findings and the device test checklist: `RELEASE_2_2_0.md`.

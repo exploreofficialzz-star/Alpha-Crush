@@ -10,7 +10,13 @@ var settings := {
     "vibration": true,
     "text_scale": 1.0,
     "high_contrast": false,
-    "camera_sensitivity": 1.0
+    "camera_sensitivity": 1.0,
+    "auto_quality": true,
+    "quality_detected": false,
+    "left_handed": false,
+    "guide_arrows": true,
+    "character_chosen": false,
+    "tutorial_done": false
 }
 
 func set_value(key: String, value: Variant) -> void:

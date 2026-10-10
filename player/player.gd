@@ -4,8 +4,8 @@ class_name AlphaCrushPlayer
 var interaction_source: Node
 var settings: SettingsManager
 var camera_sensitivity := 1.0
-var speed := 5.5
-var sprint_speed := 8.0
+var speed := 6.2
+var sprint_speed := 8.8
 var jump_velocity := 5.0
 var gravity := 14.0
 var camera: Camera3D
@@ -14,6 +14,7 @@ var yaw := 0.0
 var pitch := -10.0
 var mobile_move := Vector2.ZERO
 var mobile_sprint := false
+var _jump_buffer := 0.0
 var interact_cooldown := 0.0
 var carry_socket: Node3D
 var carried_letters: Array[LetterObject] = []
@@ -27,6 +28,13 @@ var _step_distance := 0.0
 var body_type := "male"
 var _avatar_seed := 1
 
+## The hero is drawn bigger than life so a small child can always find them on a phone screen.
+## Only the picture is enlarged; the collision capsule keeps its size so doorways and the
+## footbridge stay passable.
+const AVATAR_SCALE := 1.2
+## Pushing the stick past this fraction runs, so a child never needs a separate run button.
+const AUTO_RUN_AT := 0.92
+const JUMP_BUFFER_SECONDS := 0.18
 const LIMB_PHASE := {"LeftArm": 1.0, "RightLeg": 1.0, "RightArm": -1.0, "LeftLeg": -1.0}
 
 func _ready() -> void:
@@ -38,6 +46,7 @@ func _ready() -> void:
 func _build_body() -> void:
     visual_root = Node3D.new()
     visual_root.name = "HumanVisual"
+    visual_root.scale = Vector3.ONE * AVATAR_SCALE
     add_child(visual_root)
     var shape := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new()
@@ -57,7 +66,7 @@ func _build_body() -> void:
     visual_root.add_child(name_label)
     carry_socket = Node3D.new()
     carry_socket.name = "CarrySocket"
-    carry_socket.position = Vector3(0, 1.25, -0.55)
+    carry_socket.position = Vector3(0, 1.5, -0.7)
     add_child(carry_socket)
 
 func _build_rig() -> bool:
@@ -124,24 +133,27 @@ func _mat(c: Color) -> Material:
 func _build_camera() -> void:
     pivot = Node3D.new()
     pivot.name = "CameraPivot"
-    pivot.position = Vector3(0, 2.4, 0)
+    pivot.position = Vector3(0, 1.55, 0)
     add_child(pivot)
     camera = Camera3D.new()
-    camera.position = Vector3(0, 2.2, 7.5)
+    camera.position = Vector3(0, 0.9, 5.2)
     camera.rotation_degrees = Vector3(-10, 0, 0)
     camera.current = true
-    camera.fov = 62
+    camera.fov = 58
     pivot.add_child(camera)
 
 func _physics_process(delta: float) -> void:
     interact_cooldown = maxf(0.0, interact_cooldown - delta)
+    _jump_buffer = maxf(0.0, _jump_buffer - delta)
     var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-    if mobile_move.length() > 0.1:
+    if mobile_move.length() > 0.05:
         input_vec = mobile_move
+    var analog := clampf(input_vec.length(), 0.0, 1.0)
     # Movement is relative to where the camera is looking (yaw), not to fixed world axes;
     # otherwise "forward" drifts sideways as soon as the camera has been turned.
     var dir := Basis(Vector3.UP, deg_to_rad(yaw)) * Vector3(input_vec.x, 0.0, input_vec.y)
-    var target_speed := sprint_speed if (Input.is_action_pressed("sprint") or mobile_sprint) else speed
+    var sprinting := Input.is_action_pressed("sprint") or mobile_sprint or mobile_move.length() >= AUTO_RUN_AT
+    var target_speed := sprint_speed if sprinting else speed * lerpf(0.55, 1.0, analog)
     if dir.length() > 0.1:
         dir = dir.normalized()
         velocity.x = dir.x * target_speed
@@ -153,7 +165,8 @@ func _physics_process(delta: float) -> void:
         velocity.z = move_toward(velocity.z, 0, target_speed * 8 * delta)
     if not is_on_floor():
         velocity.y -= gravity * delta
-    elif Input.is_action_just_pressed("jump"):
+    elif Input.is_action_just_pressed("jump") or _jump_buffer > 0.0:
+        _jump_buffer = 0.0
         velocity.y = jump_velocity
     move_and_slide()
     if is_on_floor():
@@ -186,6 +199,10 @@ func interact() -> void:
 
 func set_mobile_move(vector: Vector2) -> void:
     mobile_move = vector
+
+## Tapping jump a moment before landing still jumps, which is far kinder to small fingers.
+func request_jump() -> void:
+    _jump_buffer = JUMP_BUFFER_SECONDS
 
 func set_mobile_sprint(enabled: bool) -> void:
     mobile_sprint = enabled

@@ -2,7 +2,11 @@
 
 This repository is being built systematically from `ALPHA_CRUSH_MASTER_GODOT_BUILD_PROMPT.txt`.
 
-## Current milestone: 2.0.0 / Complete game-content arc
+## Current milestone: 2.2.0 / Kid-friendly, low-end-ready release (see RELEASE_2_2_0.md)
+
+Not yet executed in a Godot runtime (none available in the authoring environment): run the editor import, `tests/run_tests.gd`, and the device checklist in RELEASE_2_2_0.md.
+
+### 2.0.0 content arc (still current)
 
 ### Implemented in source
 - Production-oriented Godot 4.x folder architecture

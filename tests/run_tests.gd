@@ -23,6 +23,10 @@ const SUITE_WORD_SYSTEM = preload("res://tests/unit/test_word_system.gd")
 const SUITE_WORLD_AUTHORITY = preload("res://tests/unit/test_world_authority.gd")
 const SUITE_WORLD_CLOCK = preload("res://tests/unit/test_world_clock.gd")
 const SUITE_WORLD_STATE = preload("res://tests/unit/test_world_state.gd")
+const SUITE_DEVICE_PROFILE = preload("res://tests/unit/test_device_profile.gd")
+const SUITE_QUALITY_MANAGER = preload("res://tests/unit/test_quality_manager.gd")
+const SUITE_KID_UI = preload("res://tests/unit/test_kid_ui.gd")
+const SUITE_TOUCH_CONTROLS = preload("res://tests/unit/test_touch_controls.gd")
 const SUITE_SEED_DETERMINISM = preload("res://tests/integration/test_seed_determinism.gd")
 
 func _initialize() -> void:
@@ -50,6 +54,10 @@ func _initialize() -> void:
         ["world_authority", SUITE_WORLD_AUTHORITY.run()],
         ["world_clock", SUITE_WORLD_CLOCK.run()],
         ["world_state", SUITE_WORLD_STATE.run()],
+        ["device_profile", SUITE_DEVICE_PROFILE.run()],
+        ["quality_manager", SUITE_QUALITY_MANAGER.run()],
+        ["kid_ui", SUITE_KID_UI.run()],
+        ["touch_controls", SUITE_TOUCH_CONTROLS.run()],
         ["seed_determinism", SUITE_SEED_DETERMINISM.run()]
     ]
     var failed := 0

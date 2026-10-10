@@ -1,26 +1,30 @@
-extends Control
+extends TouchTarget
 class_name CameraDrag
+
+## Swipe anywhere that is not a button or the stick to look around. It is the lowest-priority
+## touch target, so it covers the left and middle of the screen.
+signal dragged(relative: Vector2)
 
 var player: Node
 var touch_id := -1
 
 func setup(local_player: Node) -> void:
     player = local_player
-    mouse_filter = Control.MOUSE_FILTER_STOP
+    mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-func _gui_input(event: InputEvent) -> void:
-    if event is InputEventScreenTouch:
-        var touch := event as InputEventScreenTouch
-        if touch.pressed and touch_id == -1:
-            touch_id = touch.index
-            accept_event()
-        elif not touch.pressed and touch.index == touch_id:
-            touch_id = -1
-            accept_event()
-    elif event is InputEventScreenDrag:
-        var drag := event as InputEventScreenDrag
-        if drag.index != touch_id:
-            return
-        if player and player.has_method("nudge_camera"):
-            player.nudge_camera(drag.relative)
-        accept_event()
+func touch_down(index: int, _pos: Vector2) -> void:
+    touch_id = index
+
+func touch_move(index: int, _pos: Vector2, relative: Vector2) -> void:
+    if index != touch_id:
+        return
+    if player and player.has_method("nudge_camera"):
+        player.nudge_camera(relative)
+    dragged.emit(relative)
+
+func touch_up(index: int, _pos: Vector2) -> void:
+    if index == touch_id:
+        touch_id = -1
+
+func touch_cancel() -> void:
+    touch_id = -1

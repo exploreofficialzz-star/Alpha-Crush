@@ -155,6 +155,42 @@ if asset_audit.exists():
     if result.returncode != 0:
         errors.append('asset audit failed:\n' + result.stdout[-1500:])
 
+# --- 2.2.0 release gates: branding, kid-friendly HUD, Android targets, touch routing ---------------
+project_text = (ROOT / 'project.godot').read_text()
+if 'boot_splash/image="res://assets/branding/boot_splash.png"' not in project_text:
+    errors.append('project.godot: the default Godot-logo boot splash must be replaced with assets/branding/boot_splash.png')
+icon_match = re.search(r'config/icon="res://([^"]+)"', project_text)
+if not icon_match or not (ROOT / icon_match.group(1)).exists():
+    errors.append('project.godot: config/icon is missing or points at a file that does not exist')
+if 'window/handheld/orientation=' not in project_text:
+    errors.append('project.godot: display/window/handheld/orientation is not set (phones need landscape or sensor landscape)')
+if 'window/stretch/aspect="expand"' not in project_text:
+    errors.append('project.godot: stretch aspect must be "expand" so the HUD reaches the screen edges on tall phones')
+preset_text = (ROOT / 'export_presets.cfg').read_text()
+target_sdk = re.search(r'gradle_build/target_sdk="(\d+)"', preset_text)
+if not target_sdk or int(target_sdk.group(1)) < 36:
+    errors.append('export_presets.cfg: Google Play requires target API 36 for new apps and updates (in force since 2026-08-31)')
+for key in ('main_192x192', 'adaptive_foreground_432x432', 'adaptive_background_432x432', 'adaptive_monochrome_432x432'):
+    icon_entry = re.search(r'launcher_icons/%s="res://([^"]+)"' % key, preset_text)
+    if not icon_entry or not (ROOT / icon_entry.group(1)).exists():
+        errors.append(f'export_presets.cfg: launcher icon {key} is missing')
+if 'architectures/armeabi-v7a=true' not in preset_text:
+    errors.append('export_presets.cfg: 32-bit ARM must stay enabled; many low-end Android Go phones are armeabi-v7a only')
+for relative in ('ui/mobile/touch_button.gd', 'ui/mobile/virtual_joystick.gd', 'ui/mobile/camera_drag.gd'):
+    if '_gui_input' in (ROOT / relative).read_text():
+        errors.append(f'{relative}: on-screen controls must be driven by TouchRouter; Godot GUI input drops the second finger')
+icon_dir = ROOT / 'assets' / 'ui' / 'icons'
+icon_literals = re.compile(r'(?:KidUI\.icon|icon_rect|_round_button|_make_button|set_icon|set_corner_icon)\(\s*"([a-z_0-9]+)"')
+for path in ROOT.rglob('*.gd'):
+    if 'tests' in path.parts:
+        continue
+    source = path.read_text(errors='ignore')
+    if re.search(r'^\t', source, re.M):
+        errors.append(f'{path}: tab indentation (the project is space-indented; mixing breaks the GDScript parser)')
+    for icon_name in icon_literals.findall(source):
+        if not (icon_dir / f'{icon_name}.png').exists():
+            errors.append(f'{path}: references missing UI icon "{icon_name}"')
+
 if errors:
     print('SOURCE AUDIT FAILED')
     for error in errors:

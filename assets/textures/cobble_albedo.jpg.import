@@ -5,7 +5,7 @@ type="CompressedTexture2D"
 uid="uid://dycuy4kffg52i"
 path="res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.ctex"
 metadata={
-"vram_texture": false
+"vram_texture": true
 }
 
 [deps]
@@ -15,7 +15,7 @@ dest_files=["res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa288
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

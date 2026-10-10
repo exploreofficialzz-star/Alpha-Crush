@@ -6,6 +6,8 @@ signal ad_failed(kind: String, reason: String)
 
 var sdk_available := false
 var remove_ads := false
+## Pass this to the ad SDK as its child-directed treatment flag when a real SDK is wired in.
+var child_directed := GameConfig.CHILD_DIRECTED
 var consent_manager: Node
 var app_id := ""
 var ad_unit_ids: Dictionary = {}
@@ -37,7 +39,8 @@ func complete_rewarded(kind: String, verified: bool) -> void:
     reward_granted.emit(kind)
 
 func show_interstitial() -> bool:
-    if remove_ads or not sdk_available:
+    # No full-screen interruptions in a game for small children; rewarded ads (behind the parental gate) only.
+    if remove_ads or child_directed or not sdk_available:
         return false
     return true
 

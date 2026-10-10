@@ -4,6 +4,9 @@ class_name AlphaCrushWorld
 signal discovery_message(text: String)
 signal objective_changed(title: String, detail: String)
 signal context_changed(text: String)
+## Structured twin of context_changed: kind is one of pickup/drop/harvest/garden/market/workshop/
+## discover/field/boat/storage/bridge/dock/gate/beacon/hall or "none"; extra carries a letter for pickup.
+signal context_kind_changed(kind: String, extra: String)
 signal crafting_requested
 signal resource_harvested(item_id: String, amount: int)
 
@@ -34,6 +37,8 @@ var completed_words: Dictionary = {}
 var garden_harvest_active := false
 var context_timer := 0.0
 var last_context := ""
+var last_context_kind := ""
+var last_context_extra := ""
 var garden_upgrade_visual: Node3D
 var field_crops_spawned := false
 var realistic := false     # true when the generated models/terrain loaded (VillageArt); false = old placeholders
@@ -79,47 +84,69 @@ func _process(delta: float) -> void:
     if player_node == null:
         return
     var context := ""
-    if player_node.get("carried_letters") is Array and player_node.carried_letters.size() > 0:
-        context = "Q  DROP LETTER"
-    else:
-        for node in letters:
-            if is_instance_valid(node) and player_node.global_position.distance_to(node.global_position) < 2.8:
-                context = "E  PICK UP %s" % str(node.letter)
-                break
+    var kind := "none"
+    var extra := ""
+    var here := player_node.global_position
+    # Letters first: the action button picks one up even while others are being carried.
+    for node in letters:
+        if is_instance_valid(node) and here.distance_to(node.global_position) < 2.8:
+            context = "E  PICK UP %s" % str(node.letter)
+            kind = "pickup"
+            extra = str(node.letter)
+            break
     if context.is_empty():
         for node in fruit_nodes:
-            if is_instance_valid(node) and player_node.global_position.distance_to(node.global_position) < 2.4 and bool(node.get("available")):
+            if is_instance_valid(node) and here.distance_to(node.global_position) < 2.4 and bool(node.get("available")):
                 context = "E  HARVEST"
+                kind = "harvest"
                 break
-    if context.is_empty() and player_node.global_position.distance_to(GARDEN_POS) < 8.0:
-        context = "E  BUILD GARDEN UPGRADE" if world_state.get_state("garden_development") == "ACTIVE" else "E  GARDEN"
-    if context.is_empty() and player_node.global_position.distance_to(MARKET_POS) < 6.0:
-        context = "E  FULFILL ORDER / SELL" if market_open else "MARKET LOCKED — DISCOVER OPEN"
-    if context.is_empty() and player_node.global_position.distance_to(WORKSHOP_POS) < 6.0:
-        context = "E  WORKSHOP"
-    if context.is_empty() and player_node.global_position.distance_to(RIVER_GATE_POS) < 6.0:
-        context = "E  DISCOVER"
-    if context.is_empty() and player_node.global_position.distance_to(CAVE_SIGN_POS) < 7.0:
-        context = "E  DISCOVER"
-    if context.is_empty() and player_node.global_position.distance_to(FIELD_POS) < 6.0:
-        context = "E  FIELD"
-    if context.is_empty() and player_node.global_position.distance_to(BOAT_POS) < 6.0:
-        context = "E  BOAT"
-    if context.is_empty() and player_node.global_position.distance_to(STORAGE_POS) < 5.0:
-        context = "E  STORAGE"
-    if context.is_empty() and player_node.global_position.distance_to(REPAIR_BRIDGE_POS) < 6.0:
-        context = "E  REPAIR BRIDGE"
-    if context.is_empty() and player_node.global_position.distance_to(DOCK_POS) < 6.0:
-        context = "E  DOCK"
-    if context.is_empty() and player_node.global_position.distance_to(OLD_GATE_POS) < 6.0:
-        context = "E  OLD GATE"
-    if context.is_empty() and player_node.global_position.distance_to(BEACON_POS) < 6.0:
-        context = "E  BEACON"
+    if context.is_empty():
+        for npc in get_children():
+            if npc is HumanNPCAgent and here.distance_to(npc.global_position) < 2.6:
+                context = "E  TALK"
+                kind = "talk"
+                break
+    if context.is_empty():
+        var site := _context_site(here)
+        context = str(site.get("text", ""))
+        kind = str(site.get("kind", "none"))
+    if context.is_empty() and player_node.get("carried_letters") is Array and player_node.carried_letters.size() > 0:
+        context = "Q  DROP LETTER"
     if context.is_empty():
         context = "Explore the world"
     if context != last_context:
         last_context = context
         context_changed.emit(context)
+    if kind != last_context_kind or extra != last_context_extra:
+        last_context_kind = kind
+        last_context_extra = extra
+        context_kind_changed.emit(kind, extra)
+
+## Which landmark (if any) the player is standing at, in priority order: {text, kind} or {}.
+func _context_site(here: Vector3) -> Dictionary:
+    if here.distance_to(GARDEN_POS) < 8.0:
+        return {"text": "E  BUILD GARDEN UPGRADE" if world_state.get_state("garden_development") == "ACTIVE" else "E  GARDEN", "kind": "garden"}
+    if here.distance_to(MARKET_POS) < 6.0:
+        return {"text": "E  FULFILL ORDER / SELL" if market_open else "MARKET LOCKED — DISCOVER OPEN", "kind": "market"}
+    if here.distance_to(WORKSHOP_POS) < 6.0:
+        return {"text": "E  WORKSHOP", "kind": "workshop"}
+    if here.distance_to(RIVER_GATE_POS) < 6.0 or here.distance_to(CAVE_SIGN_POS) < 7.0:
+        return {"text": "E  DISCOVER", "kind": "discover"}
+    if here.distance_to(FIELD_POS) < 6.0:
+        return {"text": "E  FIELD", "kind": "field"}
+    if here.distance_to(BOAT_POS) < 6.0:
+        return {"text": "E  BOAT", "kind": "boat"}
+    if here.distance_to(STORAGE_POS) < 5.0:
+        return {"text": "E  STORAGE", "kind": "storage"}
+    if here.distance_to(REPAIR_BRIDGE_POS) < 6.0:
+        return {"text": "E  REPAIR BRIDGE", "kind": "bridge"}
+    if here.distance_to(DOCK_POS) < 6.0:
+        return {"text": "E  DOCK", "kind": "dock"}
+    if here.distance_to(OLD_GATE_POS) < 6.0:
+        return {"text": "E  OLD GATE", "kind": "gate"}
+    if here.distance_to(BEACON_POS) < 6.0:
+        return {"text": "E  BEACON", "kind": "beacon"}
+    return {}
 
 func configure(daily_manager: Node, event_manager: Node, map: Node) -> void:
     daily = daily_manager

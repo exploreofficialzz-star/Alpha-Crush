@@ -43,34 +43,107 @@ var autosave: Timer
 var world_environment: Environment
 var sun_light: DirectionalLight3D
 var atmosphere: Atmosphere
+var splash: SplashScreen
+var adaptive: AdaptiveQuality
+
+## The game's own splash stays up at least this long so the logo is always seen, even on fast phones.
+const MIN_SPLASH_SECONDS := 1.6
+var _boot_started_msec := 0
 
 func _ready() -> void:
+    _boot_started_msec = Time.get_ticks_msec()
+    # The Android back button must never close the game under a child's thumb; the HUD handles it.
+    get_tree().quit_on_go_back = false
     _setup_input()
     _setup_environment()
+    splash = SplashScreen.new()
+    splash.name = "Splash"
+    add_child(splash)
+    # Two frames so the splash is really on screen before any heavy work blocks the main thread.
+    await get_tree().process_frame
+    await get_tree().process_frame
+    splash.set_progress(0.1)
     _create_services()
     _restore_save()
+    _detect_device_quality()
     _apply_runtime_settings()
+    splash.set_progress(0.2)
+    await _choose_character_if_new()
+    await get_tree().process_frame
+    splash.set_progress(0.35)
     _create_player()
     _create_atmosphere()
+    splash.set_progress(0.5)
+    await get_tree().process_frame
     _create_world()
     _create_hud()
     _apply_runtime_settings()
     _connect_systems()
+    splash.set_progress(0.65)
     # Add the world only after its signals are connected, so its first discovery
     # and tutorial objective are not emitted into the void during _ready().
     add_child(world)
     _restore_world_after_load()
+    splash.set_progress(0.85)
+    await _wait_for_ground()
+    player.set_physics_process(true)
+    adaptive = AdaptiveQuality.new()
+    adaptive.name = "AdaptiveQuality"
+    adaptive.setup(quality, settings)
+    add_child(adaptive)
     autosave = Timer.new()
     autosave.wait_time = 30.0
     autosave.autostart = true
     add_child(autosave)
     autosave.timeout.connect(_save)
-    analytics.track("game_start", {"version": GameConfig.VERSION_NAME})
+    analytics.track("game_start", {"version": GameConfig.VERSION_NAME, "tier": str(settings.get_value("quality", "medium"))})
     audio.play_music("village")
+    await _finish_splash()
     if not save_system.last_recovery_message.is_empty():
         hud.show_message(save_system.last_recovery_message)
     else:
         hud.show_message("Welcome to Alpha Crush — WORDS CHANGE THE WORLD")
+
+## First launch only: pick a graphics tier from the phone's RAM / CPU / GPU. AdaptiveQuality
+## then corrects the guess from the frame rate it actually sees.
+func _detect_device_quality() -> void:
+    if bool(settings.get_value("quality_detected", false)):
+        return
+    settings.set_value("quality", DeviceProfile.detect())
+    settings.set_value("quality_detected", true)
+
+## "Who is playing?" - shown once, before the heavy world build, so the child can start tapping
+## straight away. The choice becomes the avatar_female setting.
+func _choose_character_if_new() -> void:
+    if bool(settings.get_value("character_chosen", false)):
+        return
+    var select := CharacterSelect.new()
+    select.name = "CharacterSelect"
+    select.audio = audio
+    splash.visible = false
+    add_child(select)
+    var gender: String = await select.chosen
+    settings.set_value("avatar_female", gender == "female")
+    settings.set_value("character_chosen", true)
+    splash.visible = true
+
+## Keeps the hero frozen (and the splash up) until the ground under them has collision, so a slow
+## phone never drops the player through a world that has not finished building.
+func _wait_for_ground() -> void:
+    for _attempt in 90:
+        var space := get_world_3d().direct_space_state
+        var query := PhysicsRayQueryParameters3D.create(player.global_position + Vector3(0, 20, 0), player.global_position + Vector3(0, -40, 0), 1)
+        if not space.intersect_ray(query).is_empty():
+            return
+        await get_tree().physics_frame
+
+func _finish_splash() -> void:
+    var elapsed := float(Time.get_ticks_msec() - _boot_started_msec) / 1000.0
+    if elapsed < MIN_SPLASH_SECONDS:
+        await get_tree().create_timer(MIN_SPLASH_SECONDS - elapsed).timeout
+    if is_instance_valid(splash):
+        await splash.finish()
+    splash = null
 
 func _create_services() -> void:
     save_system = preload("res://core/services/save_system.gd").new()
@@ -240,6 +313,7 @@ func _create_player() -> void:
         if restored.y > -5.0 and restored.length() < 100000.0:
             player.position = restored
     add_child(player)
+    player.set_physics_process(false)
     if player.has_method("apply_profile"):
         player.apply_profile(profile)
 
@@ -293,6 +367,8 @@ func _create_hud() -> void:
     hud.consent = consent
     hud.ads = ads
     hud.purchases = purchases
+    hud.audio = audio
+    hud.opportunities = opportunities
     add_child(hud)
 
 func _connect_systems() -> void:
@@ -470,6 +546,9 @@ func _restore_world_after_load() -> void:
 func _notification(what: int) -> void:
     if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
         _save(what == NOTIFICATION_WM_CLOSE_REQUEST)
+    elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+        if is_instance_valid(hud):
+            hud.handle_back()
 
 func _save(clean_shutdown: bool = false) -> void:
     if not is_instance_valid(save_system) or not is_instance_valid(player):

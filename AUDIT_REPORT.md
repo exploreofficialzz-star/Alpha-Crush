@@ -89,3 +89,9 @@ Defects found and fixed while building it (all by inspection / planted-bug verif
 * `:=` inference on loop variables / packed arrays, `Array.append_array` implicit conversions, a lambda-in-argument-list pattern.
 
 Not verified (needs the engine): shader compilation, import of the GLB/texture set, visual quality in motion, performance on devices.
+
+---
+
+# Addendum — 2.2.0 production-hardening pass
+See `RELEASE_2_2_0.md` for the findings (multi-touch input, Play API 36, 32-bit ARM, child-directed ads/IAP/network gating,
+back button, texture import, per-tier render settings, safe-area layout), what was verified statically, and the device checklist.
