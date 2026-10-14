@@ -39,6 +39,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install asset audit dependency
+        run: python3 -m pip install --disable-pip-version-check numpy
+
       - name: Install Godot editor
         shell: bash
         run: |
