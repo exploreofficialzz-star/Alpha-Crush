@@ -153,3 +153,25 @@ func finish() -> void:
     fade.tween_property(_root, "modulate:a", 0.0, 0.4)
     await fade.finished
     queue_free()
+
+## Plain-language message under the loading tiles (used by the start-up watchdog).
+func show_notice(text: String) -> void:
+    if _root == null or not is_instance_valid(_root):
+        return
+    var notice := _root.get_node_or_null("Notice") as Label
+    if notice == null:
+        notice = Label.new()
+        notice.name = "Notice"
+        notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        notice.add_theme_color_override("font_color", Color(1, 1, 1, 0.92))
+        notice.add_theme_font_size_override("font_size", 22)
+        notice.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+        notice.offset_left = 40.0
+        notice.offset_right = -40.0
+        notice.offset_top = -150.0
+        notice.offset_bottom = -30.0
+        notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        _root.add_child(notice)
+    notice.text = text

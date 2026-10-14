@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://2hlrb8hw5e6q"
-path="res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.ctex"
+path.s3tc="res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.s3tc.ctex"
+path.etc2="res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/iron_orm.png"
-dest_files=["res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.ctex"]
+dest_files=["res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.s3tc.ctex", "res://.godot/imported/iron_orm.png-53887e5c9ada24f023566ee75998d2ee.etc2.ctex"]
 
 [params]
 

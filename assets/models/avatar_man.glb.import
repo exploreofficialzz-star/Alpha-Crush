@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b0k7bsai7xvji"
-path="res://.godot/imported/avatar_male.glb-f2e7b13b8633148f01d30f4c00980ca5.scn"
+uid="uid://byme21gkwxmwt"
+path="res://.godot/imported/avatar_man.glb-890fc11fa3dd81fe6846c5f53601f15b.scn"
 
 [deps]
 
-source_file="res://assets/models/avatar_male.glb"
-dest_files=["res://.godot/imported/avatar_male.glb-f2e7b13b8633148f01d30f4c00980ca5.scn"]
+source_file="res://assets/models/avatar_man.glb"
+dest_files=["res://.godot/imported/avatar_man.glb-890fc11fa3dd81fe6846c5f53601f15b.scn"]
 
 [params]
 
@@ -24,13 +24,13 @@ nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true
 meshes/ensure_tangents=true
-meshes/generate_lods=true
-meshes/create_shadow_meshes=true
-meshes/light_baking=1
+meshes/generate_lods=false
+meshes/create_shadow_meshes=false
+meshes/light_baking=0
 meshes/lightmap_texel_size=0.2
 meshes/force_disable_compression=false
 skins/use_named_skins=true
-animation/import=true
+animation/import=false
 animation/fps=30
 animation/trimming=false
 animation/remove_immutable_tracks=true

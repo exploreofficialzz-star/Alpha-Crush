@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvqehctmggw61"
-path="res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.ctex"
+path.s3tc="res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.s3tc.ctex"
+path.etc2="res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/awning_orm.png"
-dest_files=["res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.ctex"]
+dest_files=["res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.s3tc.ctex", "res://.godot/imported/awning_orm.png-1512900d7970b384444fd719f4209ded.etc2.ctex"]
 
 [params]
 

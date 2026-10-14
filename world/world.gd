@@ -9,6 +9,8 @@ signal context_changed(text: String)
 signal context_kind_changed(kind: String, extra: String)
 signal crafting_requested
 signal resource_harvested(item_id: String, amount: int)
+## Emitted once the village, its NPCs and animals are all in place (the build is spread over several frames).
+signal build_finished
 
 var word_system: WordSystem
 var inventory: Inventory
@@ -45,6 +47,9 @@ var realistic := false     # true when the generated models/terrain loaded (Vill
 var cave_ore_spawned := false
 var word_progress: Dictionary = {}
 var harvest_state: Dictionary = {}
+var built := false
+## Set by the start-up guard after a failed previous launch: skips the optional extras (animals).
+var safe_mode := false
 
 const VILLAGE_CENTER := Vector3(0, 0, 0)
 const GARDEN_POS := Vector3(11, 0, -10)
@@ -68,10 +73,16 @@ func _ready() -> void:
     assembly = preload("res://words/assembly/word_assembly.gd").new()
     assembly.name = "WordAssembly"
     add_child(assembly)
-    _build_world()
+    # Spread over several frames: one multi-second frame on a phone is how an app gets declared unresponsive.
+    await _build_world()
+    await get_tree().process_frame
     _spawn_npcs()
-    _spawn_animals()
+    await get_tree().process_frame
+    if not safe_mode:
+        _spawn_animals()
     _ensure_tutorial_word()
+    built = true
+    build_finished.emit()
 
 func _process(delta: float) -> void:
     context_timer -= delta
@@ -216,25 +227,30 @@ func _spawn_npcs() -> void:
 
 func _build_world() -> void:
     _ground()
+    await get_tree().process_frame
     _path(Vector3(0, 0, -3), Vector3(0, 0, 1), 34)
     _home(Vector3(0, 0, 7))
     _market(MARKET_POS)
     _garden(GARDEN_POS)
+    await get_tree().process_frame
     _workshop(WORKSHOP_POS)
     _riverland_approach(RIVER_GATE_POS)
     _cave_approach(CAVE_SIGN_POS)
     _field(FIELD_POS)
     _boat(BOAT_POS)
+    await get_tree().process_frame
     _storage(STORAGE_POS)
     _repair_bridge_approach(REPAIR_BRIDGE_POS)
     _closed_dock(DOCK_POS)
     _old_gate(OLD_GATE_POS)
     _dark_beacon(BEACON_POS)
     _community_hall(COMMUNITY_HALL_POS)
+    await get_tree().process_frame
     _build_trees()
     _locked_gate(Vector3(10, 0, -7))
     _build_landmarks()
     _spawn_basic_resources()
+    await get_tree().process_frame
     if realistic:
         VillageArt.dress_village(self, GameConfig.WORLD_SEED)
 

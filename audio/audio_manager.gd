@@ -16,7 +16,7 @@ const AMBIENCE := {
 const AMBIENCE_LEVEL := {"day": 0.75, "night": 0.6, "river": 0.9, "rain": 0.8}
 
 func _ready() -> void:
-    for id in ["pickup", "word_complete", "unlock", "harvest", "market", "ui_click", "construction", "hint", "levelup", "footstep", "discovery", "footstep_grass_0", "footstep_grass_1", "footstep_grass_2"]:
+    for id in ["pickup", "word_complete", "unlock", "harvest", "market", "ui_click", "ui_open", "construction", "hint", "levelup", "footstep", "discovery", "footstep_grass_0", "footstep_grass_1", "footstep_grass_2"]:
         _register(id, "res://audio/sfx/%s.wav" % id)
     _register_music("village", "res://audio/music/village_theme.wav")
     _register_music("exploration", "res://audio/music/exploration_theme.wav")

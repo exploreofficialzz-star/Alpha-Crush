@@ -118,20 +118,6 @@ static func _build(id: String) -> Material:
             a.rim = 0.25
             a.rim_tint = 0.5
             return a
-        "avatar_eye":
-            var e := StandardMaterial3D.new()
-            e.vertex_color_use_as_albedo = true
-            e.roughness = 0.1
-            e.metallic_specular = 0.9
-            return e
-        "avatar_hair":
-            var h := StandardMaterial3D.new()
-            h.albedo_color = Color(0.13, 0.08, 0.05)
-            h.roughness = 0.62
-            h.rim_enabled = true
-            h.rim = 0.3
-            h.rim_tint = 0.6
-            return h
         "accessory_metal":
             var m := StandardMaterial3D.new()
             m.albedo_color = Color(0.7, 0.7, 0.72)
@@ -241,17 +227,6 @@ static func grass_material(kind: String) -> ShaderMaterial:
         m.set_shader_parameter("fade_start", 22.0)
         m.set_shader_parameter("fade_end", 34.0)
     _cache[key] = m
-    return m
-
-static func make_avatar_material(outfit: Dictionary) -> ShaderMaterial:
-    var m := ShaderMaterial.new()
-    var shader := _load_shader("avatar")
-    if shader != null:
-        m.shader = shader
-    m.set_shader_parameter("detail_normal", load_tex(TEX + "detail_normal.jpg"))
-    for key in ["skin", "shirt", "pants", "leather", "hair"]:
-        if outfit.has(key):
-            m.set_shader_parameter(key + "_color", outfit[key])
     return m
 
 static func sky_material() -> ShaderMaterial:

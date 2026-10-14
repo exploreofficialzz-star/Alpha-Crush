@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dycuy4kffg52i"
-path="res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.ctex"
+path.s3tc="res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.s3tc.ctex"
+path.etc2="res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/cobble_albedo.jpg"
-dest_files=["res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.ctex"]
+dest_files=["res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.s3tc.ctex", "res://.godot/imported/cobble_albedo.jpg-aaf5e1c4713c96f1f247c3fa2887f5e7.etc2.ctex"]
 
 [params]
 

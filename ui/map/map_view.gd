@@ -33,7 +33,7 @@ func _draw() -> void:
     draw_line(center + Vector2(-radius, 0), center + Vector2(radius, 0), Color(1, 1, 1, 0.08), 2.0)
     draw_string(ThemeDB.fallback_font, center + Vector2(-8, -radius - 6), "N", HORIZONTAL_ALIGNMENT_CENTER, 16, 22, Color(1, 1, 1, 0.7))
     if map_manager != null:
-        var player_pos := player.global_position if player != null else Vector3.ZERO
+        var player_pos: Vector3 = player.global_position if player != null else Vector3.ZERO
         for id in map_manager.discovered.keys():
             var item: Dictionary = map_manager.discovered[id]
             var p = item.get("position", [0, 0, 0])

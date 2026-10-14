@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://m66y6cnujwxk"
-path="res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.ctex"
+path.s3tc="res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.s3tc.ctex"
+path.etc2="res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/wood_planks_normal.jpg"
-dest_files=["res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.ctex"]
+dest_files=["res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.s3tc.ctex", "res://.godot/imported/wood_planks_normal.jpg-148ebffd5e5a494253c623b9ba7d509a.etc2.ctex"]
 
 [params]
 

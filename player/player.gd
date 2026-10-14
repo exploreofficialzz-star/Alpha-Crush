@@ -61,36 +61,48 @@ func _build_body() -> void:
     name_label.text = "EXPLORER"
     name_label.font_size = 16
     name_label.outline_size = 6
-    name_label.position = Vector3(0, 2.2 if rig != null else 2.45, 0)
     name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     visual_root.add_child(name_label)
+    _place_label()
     carry_socket = Node3D.new()
     carry_socket.name = "CarrySocket"
-    carry_socket.position = Vector3(0, 1.5, -0.7)
+    carry_socket.position = Vector3(0, 1.2, -0.62)
     add_child(carry_socket)
 
 func _build_rig() -> bool:
     var candidate := AvatarRig.new()
     candidate.name = "AvatarRig"
     visual_root.add_child(candidate)
-    if candidate.build(body_type, AvatarRig.outfit_for(profile_style, _avatar_seed)):
+    if candidate.build(body_type, AvatarRig.outfit_for(profile_style, _avatar_seed, body_type), "child"):
         rig = candidate
         return true
     visual_root.remove_child(candidate)
     candidate.free()
     return false
 
-## Switch between the male and female base model at runtime (settings toggle).
+func _place_label() -> void:
+    if name_label == null:
+        return
+    # the tag floats a hand's width above whichever hero (boy or girl) is currently shown
+    name_label.position = Vector3(0, (rig.head_top + 0.26) if rig != null else 2.45, 0)
+
+## Switch between the boy and girl hero at runtime (settings toggle). The new rig is built first and the
+## old one is released with queue_free, so nothing is ever freed while it is still being processed.
 func set_body_type(value: String) -> void:
     if value == body_type or visual_root == null:
         return
+    var previous_type := body_type
+    var previous_rig := rig
     body_type = value
-    if rig != null:
-        visual_root.remove_child(rig)
-        rig.free()
-        rig = null
+    rig = null
+    if previous_rig != null and is_instance_valid(previous_rig):
+        visual_root.remove_child(previous_rig)
+        previous_rig.queue_free()
     if not _build_rig():
-        body_type = "male" if value != "male" else value
+        body_type = previous_type
+        if not _build_rig():
+            body_type = value
+    _place_label()
 
 func _build_fallback_body() -> void:
     var body := MeshInstance3D.new()
@@ -133,10 +145,13 @@ func _mat(c: Color) -> Material:
 func _build_camera() -> void:
     pivot = Node3D.new()
     pivot.name = "CameraPivot"
-    pivot.position = Vector3(0, 1.55, 0)
+    # The hero is a child (about 1.55 m tall once enlarged), so the camera sits lower and closer than it
+    # would for an adult; the picture still fills roughly a third of a phone screen.
+    pivot.position = Vector3(0, 1.30, 0)
     add_child(pivot)
     camera = Camera3D.new()
-    camera.position = Vector3(0, 0.9, 5.2)
+    camera.position = Vector3(0, 0.8, 4.4)
+    camera.near = 0.15
     camera.rotation_degrees = Vector3(-10, 0, 0)
     camera.current = true
     camera.fov = 58
@@ -261,7 +276,7 @@ func apply_profile(profile: PlayerProfileManager) -> void:
     if name_label:
         name_label.text = str(profile.display_name).to_upper()
     if rig != null:
-        rig.apply_outfit(AvatarRig.outfit_for(profile_style, _avatar_seed))
+        rig.apply_outfit(AvatarRig.outfit_for(profile_style, _avatar_seed, body_type))
         return
     var palette := {
         "default": Color("#24364b"),

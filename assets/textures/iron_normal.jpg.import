@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cspxnwwcnax4e"
-path="res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.ctex"
+path.s3tc="res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.s3tc.ctex"
+path.etc2="res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/iron_normal.jpg"
-dest_files=["res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.ctex"]
+dest_files=["res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.s3tc.ctex", "res://.godot/imported/iron_normal.jpg-993334311de8cb6e01ff1b90508f8473.etc2.ctex"]
 
 [params]
 

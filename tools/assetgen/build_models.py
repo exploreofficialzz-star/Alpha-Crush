@@ -5,13 +5,9 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import numpy as np
 from gltf import write_glb, validate_glb, Node
 from matdefs import gltf_materials
-import props_veg as V, buildings as Bd, props_small as S, accessories as A, animals as An, avatar as Av
+import props_veg as V, buildings as Bd, props_small as S, accessories as A, animals as An
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..')); OUT = os.path.join(ROOT, 'assets', 'models')
-
-def avatar_node(gender):
-    root, geos, hair, eyes, J = Av.build(gender, lod=1.0)
-    return root
 
 def models():
     m = {}
@@ -30,13 +26,13 @@ def models():
               'letter_gem': S.letter_gem, 'stall_small': S.stall_small})
     m.update({'hat_straw': A.hat_straw, 'hat_hard': A.hat_hard, 'hat_sun': A.hat_sun, 'backpack': A.backpack})
     m.update({'animal_cow': lambda: An.build_quad('cow', 1), 'animal_goat': lambda: An.build_quad('goat', 2), 'animal_deer': lambda: An.build_quad('deer', 3), 'animal_chicken': lambda: An.build_chicken(4)})
-    m.update({'avatar_male': lambda: avatar_node('male'), 'avatar_female': lambda: avatar_node('female')})
+    # avatars (boy, girl, man, woman) are built by build_humans.py, not here
     return m
 
 def main():
     only = [a for a in sys.argv[1:] if not a.startswith('--')]
     os.makedirs(OUT, exist_ok=True); mats = gltf_materials()
-    mats.update({'animal_hide': {'color': (1, 1, 1, 1)}, 'ore_crystal': {'color': (0.35, 0.6, 0.95, 1)}, 'avatar_body': {'color': (1, 1, 1, 1)}})
+    mats.update({'animal_hide': {'color': (1, 1, 1, 1)}, 'ore_crystal': {'color': (0.35, 0.6, 0.95, 1)}})
     t0 = time.time(); total = 0; rows = []
     for name, fn in models().items():
         if only and name not in only: continue

@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ck1g7euklvhst"
-path="res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.ctex"
+path.s3tc="res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.s3tc.ctex"
+path.etc2="res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/plaster_normal.jpg"
-dest_files=["res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.ctex"]
+dest_files=["res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.s3tc.ctex", "res://.godot/imported/plaster_normal.jpg-036b1e32e3341fd82a2c05dc65d0e72f.etc2.ctex"]
 
 [params]
 

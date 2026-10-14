@@ -1,1 +1,4 @@
 .godot/
+__pycache__/
+tools/assetgen/.cache/
+*.pyc

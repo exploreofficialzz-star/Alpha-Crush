@@ -1,8 +1,11 @@
 extends CanvasLayer
 class_name CharacterSelect
 
-## "Who is playing?" Two big cards, a boy and a girl, each showing the real 3D hero turning on
-## the spot. Tap a card (the hero waves), then tap the big green play button. No reading needed.
+## "Who is playing?" Two big cards, a boy and a girl, each showing a portrait of the real 3D hero.
+## Tap a card (the hero pops forward), then tap the big green play button. No reading needed.
+## The portraits are pre-rendered from the game models (assets/ui/portraits) on purpose: live 3D previews
+## meant two extra rendering worlds and avatar builds right before the village loads, which is exactly the
+## moment a low-end phone can run out of memory.
 signal chosen(gender: String)
 
 const OPTIONS: Array[Dictionary] = [
@@ -13,7 +16,7 @@ const OPTIONS: Array[Dictionary] = [
 var audio: Node
 var _root: Control
 var _cards: Array[Button] = []
-var _rigs: Array[AvatarRig] = []
+var _portraits: Array[TextureRect] = []
 var _play: Button
 var _play_icon: TextureRect
 var _hand: TextureRect
@@ -85,7 +88,7 @@ func _make_card(index: int) -> Button:
     for state in ["normal", "hover", "pressed", "focus", "disabled"]:
         card.add_theme_stylebox_override(state, _card_style(option["tint"], false))
     card.pressed.connect(_on_card_pressed.bind(index))
-    card.add_child(_make_preview(str(option["gender"]), int(option["seed"])))
+    card.add_child(_make_portrait(str(option["portrait"]), index))
     var badge := KidUI.icon_rect(str(option["portrait"]), 70.0)
     badge.name = "Badge"
     card.add_child(badge)
@@ -96,49 +99,28 @@ func _make_card(index: int) -> Button:
     card.add_child(label)
     return card
 
-func _make_preview(gender: String, seed_value: int) -> SubViewportContainer:
-    var container := SubViewportContainer.new()
-    container.name = "Preview"
-    container.stretch = true
-    container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    var viewport := SubViewport.new()
-    viewport.own_world_3d = true
-    viewport.transparent_bg = true
-    viewport.handle_input_locally = false
-    viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-    container.add_child(viewport)
-    var environment := Environment.new()
-    environment.background_mode = Environment.BG_CLEAR_COLOR
-    environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    environment.ambient_light_color = Color(0.86, 0.90, 1.0)
-    environment.ambient_light_energy = 0.9
-    var world_environment := WorldEnvironment.new()
-    world_environment.environment = environment
-    viewport.add_child(world_environment)
-    var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-35.0, 25.0, 0.0)
-    sun.light_energy = 1.25
-    sun.shadow_enabled = false
-    viewport.add_child(sun)
-    var camera := Camera3D.new()
-    camera.fov = 30.0
-    camera.position = Vector3(0.0, 1.0, 4.4)
-    camera.current = true
-    viewport.add_child(camera)
-    var rig := AvatarRig.new()
-    rig.name = "PreviewRig"
-    viewport.add_child(rig)
-    if rig.build(gender, AvatarRig.outfit_for("default", seed_value)):
-        rig.rotation_degrees = Vector3(0.0, 160.0, 0.0)  # the model faces -Z; turn it to face the camera
-        _rigs.append(rig)
+func _make_portrait(portrait_name: String, index: int) -> Control:
+    var holder := Control.new()
+    holder.name = "Preview"
+    holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    holder.clip_contents = true
+    var picture := TextureRect.new()
+    picture.name = "Portrait"
+    picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    var path := "res://assets/ui/portraits/%s.png" % portrait_name
+    var texture: Texture2D = null
+    if ResourceLoader.exists(path):
+        texture = load(path) as Texture2D
+    if texture != null:
+        picture.texture = texture
     else:
-        viewport.remove_child(rig)
-        rig.free()
-        _rigs.append(null)
-        var fallback := KidUI.icon_rect("boy" if gender == "male" else "girl", 200.0)
-        fallback.set_anchors_preset(Control.PRESET_FULL_RECT)
-        container.add_child(fallback)
-    return container
+        # never leave an empty card: fall back to the flat badge icon
+        picture.texture = KidUI.icon(portrait_name)
+    holder.add_child(picture)
+    _portraits.append(picture)
+    return holder
 
 func _make_play_button() -> Button:
     var button := Button.new()
@@ -175,6 +157,10 @@ func _layout() -> void:
         var preview := card.get_node("Preview") as Control
         preview.position = Vector2(10.0, 10.0)
         preview.size = Vector2(card_size.x - 20.0, card_size.y - 98.0)
+        var picture := preview.get_node("Portrait") as Control
+        picture.position = Vector2.ZERO
+        picture.size = preview.size
+        picture.pivot_offset = Vector2(preview.size.x * 0.5, preview.size.y)
         var badge := card.get_node("Badge") as Control
         badge.position = Vector2(18.0, card_size.y - 84.0)
         badge.size = Vector2(70.0, 70.0)
@@ -209,8 +195,10 @@ func _on_card_pressed(index: int) -> void:
         var tween := create_tween().set_parallel(true)
         tween.tween_property(_cards[i], "scale", Vector2(1.06, 1.06) if is_selected else Vector2(0.94, 0.94), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
         tween.tween_property(_cards[i], "modulate", Color.WHITE if is_selected else Color(0.78, 0.8, 0.9, 1.0), 0.2)
-    if index < _rigs.size() and _rigs[index] != null:
-        _rigs[index].play_reach()
+    if index < _portraits.size() and is_instance_valid(_portraits[index]):
+        var pop := create_tween()
+        pop.tween_property(_portraits[index], "scale", Vector2(1.07, 1.07), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+        pop.tween_property(_portraits[index], "scale", Vector2.ONE, 0.18)
     _set_play_enabled(true)
     _hand.visible = false
 
@@ -228,9 +216,12 @@ func _on_play_pressed() -> void:
 
 func _process(delta: float) -> void:
     _time += delta
-    for rig in _rigs:
-        if rig != null and is_instance_valid(rig):
-            rig.animate(delta, 0.0, true)
+    for i in _portraits.size():
+        var picture := _portraits[i]
+        if is_instance_valid(picture):
+            var lift := sin(_time * 2.0 + float(i) * 1.7) * (3.0 if i == _selected else 1.5)
+            picture.position.y = lift
+            picture.rotation = sin(_time * 1.3 + float(i)) * (0.018 if i == _selected else 0.006)
     if _selected < 0 and not _cards.is_empty():
         var card := _cards[0]
         _hand.visible = true

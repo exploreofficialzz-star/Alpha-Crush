@@ -37,7 +37,7 @@ func _build_body() -> void:
     var gender := "female" if (role == "gardener" or role == "builder" or seed_value % 2 == 0) else "male"
     if candidate.build(gender, AvatarRig.outfit_for(role, seed_value)):
         rig = candidate
-        label_y = 2.15
+        label_y = rig.head_top + 0.28
     else:
         remove_child(candidate)
         candidate.free()

@@ -41,10 +41,25 @@ for name, path in sorted(models.items()):
         if '.' in n:
             errors.append(f'{path.name}: node name "{n}" contains "." which Godot silently removes')
     if name.startswith('avatar_'):
+        # skinned humanoids: one skin, 16 named joints, every vertex weighted, one primitive per material
         names = {n['name'] for n in doc['nodes']}
-        for need in ('Hips', 'Spine', 'Head', 'UpperArm_R', 'Forearm_L', 'Thigh_R', 'Shin_L', 'Foot_R', 'Attach_Back', 'Attach_Hat'):
+        for need in ('Hips', 'Spine', 'Neck', 'Head', 'UpperArm_R', 'Forearm_R', 'Hand_R', 'UpperArm_L', 'Forearm_L', 'Hand_L',
+                     'Thigh_R', 'Shin_R', 'Foot_R', 'Thigh_L', 'Shin_L', 'Foot_L'):
             if need not in names:
-                errors.append(f'{path.name}: missing joint/attachment "{need}"')
+                errors.append(f'{path.name}: missing joint "{need}"')
+        if len(doc.get('skins', [])) != 1:
+            errors.append(f'{path.name}: expected exactly one skin, found {len(doc.get("skins", []))}')
+        wanted = {'avatar_skin_head', 'avatar_skin_body', 'avatar_shirt', 'avatar_pants', 'avatar_shoe', 'avatar_sole', 'avatar_hair', 'avatar_eye'}
+        have = {m['name'] for m in doc.get('materials', [])}
+        if not wanted <= have:
+            errors.append(f'{path.name}: missing material slots {sorted(wanted - have)}')
+        for mesh in doc.get('meshes', []):
+            for prim in mesh['primitives']:
+                for attr in ('POSITION', 'NORMAL', 'TEXCOORD_0', 'COLOR_0', 'JOINTS_0', 'WEIGHTS_0'):
+                    if attr not in prim['attributes']:
+                        errors.append(f'{path.name}: primitive lacks {attr}')
+        if tris > 24000:
+            errors.append(f'{path.name}: {tris} triangles is over the 24k character budget')
 
 # ids the scripts ask for must exist
 referenced = set()
@@ -85,7 +100,7 @@ for key, base in textured:
 for extra in ('leaves.png', 'grass_tufts.png', 'flowers.png', 'water_normal.jpg', 'detail_normal.jpg'):
     if not (tex / extra).exists():
         errors.append(f'assets/textures/{extra} is missing')
-for shader in ('sky', 'terrain', 'foliage', 'grass', 'water', 'avatar'):
+for shader in ('sky', 'terrain', 'foliage', 'grass', 'water'):
     path = ROOT / 'visuals' / 'shaders' / f'{shader}.gdshader'
     if not path.exists():
         errors.append(f'{path.relative_to(ROOT)} is missing')
@@ -95,6 +110,33 @@ for shader in ('sky', 'terrain', 'foliage', 'grass', 'water', 'avatar'):
         errors.append(f'{path.relative_to(ROOT)}: unbalanced braces/parentheses')
     if not re.match(r'\s*shader_type\s+(spatial|sky)\s*;', code):
         errors.append(f'{path.relative_to(ROOT)}: must start with shader_type')
+
+# ---------------------------------------------------------------- humans: deep structural validation of the skinned models
+import importlib.util
+_spec = importlib.util.spec_from_file_location('validate_glb', ROOT / 'tools' / 'validate_glb.py')
+_vg = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_vg)
+for kind in ('boy', 'girl', 'man', 'woman'):
+    path = ROOT / 'assets' / 'models' / f'avatar_{kind}.glb'
+    if path.exists():
+        verrs, vtris, vverts, vjoints = _vg.validate(str(path))
+        for e in verrs:
+            errors.append(f'avatar_{kind}.glb: {e}')
+    else:
+        errors.append(f'avatar_{kind}.glb is missing (run tools/assetgen/build_humans.py)')
+
+# ---------------------------------------------------------------- humans: textures and select-screen portraits
+atex = ROOT / 'assets' / 'textures' / 'avatar'
+for kind in ('boy', 'girl', 'man', 'woman'):
+    for f in (f'skin_head_{kind}.png', f'skin_head_{kind}_n.png', f'hair_{kind}.png', f'hair_{kind}_n.png'):
+        if not (atex / f).exists():
+            errors.append(f'assets/textures/avatar/{f} is missing (run tools/assetgen/build_humans.py)')
+for f in ('skin_body.png', 'skin_body_n.png', 'fabric_knit.png', 'fabric_knit_n.png', 'fabric_denim.png', 'fabric_denim_n.png',
+          'fabric_canvas.png', 'fabric_canvas_n.png', 'rubber.png', 'rubber_n.png', 'eye.png'):
+    if not (atex / f).exists():
+        errors.append(f'assets/textures/avatar/{f} is missing (run tools/assetgen/build_humans.py)')
+for f in ('boy.png', 'girl.png'):
+    if not (ROOT / 'assets' / 'ui' / 'portraits' / f).exists():
+        errors.append(f'assets/ui/portraits/{f} is missing (the character-select screen shows it)')
 
 if errors:
     print('ASSET AUDIT FAILED')

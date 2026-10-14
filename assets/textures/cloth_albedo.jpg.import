@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://didgubfmgri6q"
-path="res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.ctex"
+path.s3tc="res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.s3tc.ctex"
+path.etc2="res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/cloth_albedo.jpg"
-dest_files=["res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.ctex"]
+dest_files=["res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.s3tc.ctex", "res://.godot/imported/cloth_albedo.jpg-7c5adeb836dc0642d3413b2298a0d1b0.etc2.ctex"]
 
 [params]
 

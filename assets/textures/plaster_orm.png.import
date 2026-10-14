@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://djkjn1fu70v5f"
-path="res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.ctex"
+path.s3tc="res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.s3tc.ctex"
+path.etc2="res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/plaster_orm.png"
-dest_files=["res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.ctex"]
+dest_files=["res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.s3tc.ctex", "res://.godot/imported/plaster_orm.png-7a47eab1543dfdc5ae3457ca4f3dadee.etc2.ctex"]
 
 [params]
 

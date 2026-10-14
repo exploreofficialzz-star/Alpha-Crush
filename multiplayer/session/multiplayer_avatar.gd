@@ -20,9 +20,11 @@ func _build_visual() -> void:
     add_child(candidate)
     var gender := "female" if peer_id % 2 == 0 else "male"
     var styles := ["explorer", "traveler", "sunrise", "forest", "coastal", "farmer", "builder"]
-    if candidate.build(gender, AvatarRig.outfit_for(styles[peer_id % styles.size()], peer_id + 11)):
+    if candidate.build(gender, AvatarRig.outfit_for(styles[peer_id % styles.size()], peer_id + 11, gender), "child"):
         rig = candidate
-        label_y = 2.15
+        # remote players are drawn at the same enlarged size as the local hero
+        rig.scale = Vector3.ONE * 1.2
+        label_y = rig.head_top * 1.2 + 0.28
     else:
         remove_child(candidate)
         candidate.free()

@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b1smswjhehnwk"
-path="res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.ctex"
+path.s3tc="res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.s3tc.ctex"
+path.etc2="res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.etc2.ctex"
 metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/bark_albedo.jpg"
-dest_files=["res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.ctex"]
+dest_files=["res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.s3tc.ctex", "res://.godot/imported/bark_albedo.jpg-58f8f664c9e480e9200d614acfb50ce6.etc2.ctex"]
 
 [params]
 

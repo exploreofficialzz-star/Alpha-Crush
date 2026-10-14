@@ -31,7 +31,7 @@ Requires `numpy`, `scipy`, `scikit-image`, `Pillow` (no Blender, no network).
 
 ## Runtime layer (`visuals/` and `world/village_art.gd`)
 
-* `MaterialLibrary` — model material *names* → PBR `StandardMaterial3D`s / shader materials (terrain, water, foliage, grass, avatar, sky).
+* `MaterialLibrary` — model material *names* → PBR `StandardMaterial3D`s / shader materials (terrain, water, foliage, grass, sky). The humans use their own `StandardMaterial3D`s built in `AvatarRig` (no custom shader).
 * `PropFactory` — loads a GLB, applies the materials, turns `COL_BOX_w_h_d` / `COL_CYL_r_h_0` / `COL_SPH_r_squash_0`
   marker nodes (centimetres; Godot strips `.` from node names) into static collision.
 * `TerrainField` — one height function for everything: flat authored village, carved river bed and ravine, rolling hills beyond.
@@ -40,14 +40,15 @@ Requires `numpy`, `scipy`, `scikit-image`, `Pillow` (no Blender, no network).
   weather (cloud cover, fog, rain particles), filmic tone-mapping, distant mountains, window / lamp glow at night.
   SSAO/SSIL switch on automatically under the Forward+ renderer.
 * `Vegetation` — region profiles → MultiMesh trees/bushes/rocks per streamed chunk, plus grass tufts and flower clusters near the player.
-* `AvatarRig` — loads the human model and animates it procedurally (idle breathing, walk/run cycle, jump pose, carrying pose, interact reach).
+* `AvatarRig` — loads a **skinned** human (`avatar_boy|girl|man|woman.glb`), builds its materials from `assets/textures/avatar/`, attaches hat / backpack to bones and animates the skeleton procedurally (idle breathing, walk/run cycle, jump pose, carrying pose, interact reach, ponytail swing).
+* `AvatarSpecs` — *generated* per-model constants (height, hat / backpack placement). `BootGuard` — start-up breadcrumbs, crash-loop detection and safe mode.
 * `VillageArt` — builds each landmark from models while keeping every node name the story code looks up.
 
 Everything degrades gracefully: if a model, texture or shader cannot be loaded the game falls back to the 2.0 placeholders.
 
 ## Budgets and quality tiers
 
-Human ≈ 22k triangles (Godot generates LODs on import), trees ≈ 1.3–2k, buildings 2–10k, animals 3–5k.
+Human ≈ 16–18k triangles (body + hair + eyes; LOD generation is off for skinned meshes), trees ≈ 1.3–2k, buildings 2–10k, animals 3–5k.
 `QualityManager` scales shadows, stream radius, grass density and prop density per tier (low … ultra).
 The project renders with **GL Compatibility** (broadest Android support). For a richer desktop look set
 `renderer/rendering_method="forward_plus"` in `project.godot`.
@@ -55,6 +56,23 @@ The project renders with **GL Compatibility** (broadest Android support). For a 
 ## Swapping in your own art
 
 * Replace any `assets/models/<id>.glb` with a model that uses the same material slot names (see `matdefs.py`).
-* The avatar expects joints named `Hips, Spine, Neck, Head, UpperArm_R/L, Forearm_R/L, Hand_R/L, Thigh_R/L, Shin_R/L, Foot_R/L`
-  and attachment nodes `Attach_Back`, `Attach_Hat` (rigid segments; a skinned character would need a different animator).
+* The avatars expect a skin with joints named `Hips, Spine, Neck, Head, UpperArm_R/L, Forearm_R/L, Hand_R/L, Thigh_R/L, Shin_R/L, Foot_R/L`
+  (optional `Ponytail` under `Head`), material slots `avatar_skin_head, avatar_skin_body, avatar_shirt, avatar_pants, avatar_shoe, avatar_sole, avatar_hair, avatar_eye`,
+  rest pose with identity joint rotations, and COLOR_0 = baked ambient occlusion. `tools/validate_glb.py` checks all of this without an engine.
 * Edit textures by changing the recipes in `texgen.py`, or drop in photographic PBR sets under the same file names.
+
+## Humans (new in 2.3.0) — `tools/assetgen/build_humans.py`
+
+| file | role |
+|---|---|
+| `human_model.py` | signed-distance model of boy, girl, man, woman: anthropometric landmarks, head with sculpted features, hands with fingers, clothes with thickness / hems / folds, shoes, hair |
+| `humanlib.py` | adaptive marching cubes, quadric-error decimation, vertex AO, proximity skin weights, a small software renderer for QA and portraits |
+| `human_tex.py` | skin / face (brows, lashes, lips, blush, freckles, stubble), eyes, hair strands, knit, denim, canvas, rubber — neutral multipliers tinted in game |
+| `build_humans.py` | mesh → decimate (face / hands protected) → exact material seams → AO → skin weights → UVs → GLB + textures + portraits + `.import` files + `visuals/avatar_specs.gd` |
+| `validate_glb.py` | structural check of the skinned GLBs (used by `tests/asset_audit.py`) |
+
+`python3 tools/assetgen/build_humans.py boy girl man woman` regenerates everything (about 5 minutes per character on one core; the build is
+split into `--stage=mesh`, `--stage=decimate` and the final stage, with checkpoints in `/tmp/humancache`). `--draft` builds a coarse
+version in seconds for design iteration. Lessons learned while building it (so they are not repeated): arms and legs must be modelled
+with a visible gap to the body (an A-pose), otherwise the mesher fuses them and any pose stretches a web between them; a garment that
+hangs from the torso must not take leg weights; seams between materials need explicit refinement or they zig-zag at triangle size.

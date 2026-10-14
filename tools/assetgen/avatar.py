@@ -1,4 +1,4 @@
-"""Human avatar generator: smooth SDF body parts meshed with marching cubes, exported as a rigid
+"""LEGACY (see build_humans.py for the game characters). Human avatar generator: smooth SDF body parts meshed with marching cubes, exported as a rigid
 joint hierarchy (ball-jointed so rotations leave no cracks).  Faces -Z, Y up, metres.
 
 Vertex colour channels (consumed by the avatar shader):  R = top/shirt  G = trousers  B = leather (boots, gloves, belt)  A = eyebrows."""

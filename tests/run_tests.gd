@@ -27,6 +27,8 @@ const SUITE_DEVICE_PROFILE = preload("res://tests/unit/test_device_profile.gd")
 const SUITE_QUALITY_MANAGER = preload("res://tests/unit/test_quality_manager.gd")
 const SUITE_KID_UI = preload("res://tests/unit/test_kid_ui.gd")
 const SUITE_TOUCH_CONTROLS = preload("res://tests/unit/test_touch_controls.gd")
+const SUITE_AVATAR_RIG = preload("res://tests/unit/test_avatar_rig.gd")
+const SUITE_BOOT_GUARD = preload("res://tests/unit/test_boot_guard.gd")
 const SUITE_SEED_DETERMINISM = preload("res://tests/integration/test_seed_determinism.gd")
 
 func _initialize() -> void:
@@ -58,6 +60,8 @@ func _initialize() -> void:
         ["quality_manager", SUITE_QUALITY_MANAGER.run()],
         ["kid_ui", SUITE_KID_UI.run()],
         ["touch_controls", SUITE_TOUCH_CONTROLS.run()],
+        ["avatar_rig", SUITE_AVATAR_RIG.run()],
+        ["boot_guard", SUITE_BOOT_GUARD.run()],
         ["seed_determinism", SUITE_SEED_DETERMINISM.run()]
     ]
     var failed := 0

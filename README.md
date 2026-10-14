@@ -40,6 +40,11 @@ The world, human avatar, animals, sky and soundscape were rebuilt on a procedura
 See `ASSET_PIPELINE.md` (what is generated, how to regenerate, honest limits) and `docs/previews/` (offline renders).
 First run on a fresh clone: `godot --headless --path . --import`, then open the project.
 
+## 2.3.0 — Crash-proof start-up and real human characters
+Crash-loop guard with safe mode and a boot log (`user://boot_log.txt`), staged world build, portrait-based character
+select, hero built once, no custom avatar shader; four new skinned characters (boy, girl, man, woman) with real faces,
+hair, clothes and hands. See `RELEASE_2_3_0.md` (what changed, what is unverified, device checklist).
+
 ## 2.2.0 — Kid-friendly, low-end-ready release
 Picture-first HUD (right-thumb floating stick, big context-aware action button, goal bubble made of
 pictures, guide arrows, wordless tutorial), boy/girl hero choice, larger hero and closer camera, game

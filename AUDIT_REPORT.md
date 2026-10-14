@@ -95,3 +95,12 @@ Not verified (needs the engine): shader compilation, import of the GLB/texture s
 # Addendum — 2.2.0 production-hardening pass
 See `RELEASE_2_2_0.md` for the findings (multi-touch input, Play API 36, 32-bit ARM, child-directed ads/IAP/network gating,
 back button, texture import, per-tier render settings, safe-area layout), what was verified statically, and the device checklist.
+
+---
+
+# Addendum — 2.3.0 start-up crash audit and human characters
+See `RELEASE_2_3_0.md`. Summary: no single certain crash line was found statically; eight risk factors on the first-run
+path were removed or guarded (live 3D previews, single-frame world build, double avatar build, custom avatar shader,
+silent coroutine failure, premature prop streaming), a boot log + safe mode now records and recovers from any remaining
+failure, and the avatars were rebuilt as four skinned characters. Still unverified without an engine: import of the new
+skinned GLBs, visual result in real lighting, performance on devices.

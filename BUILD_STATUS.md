@@ -2,9 +2,9 @@
 
 This repository is being built systematically from `ALPHA_CRUSH_MASTER_GODOT_BUILD_PROMPT.txt`.
 
-## Current milestone: 2.2.0 / Kid-friendly, low-end-ready release (see RELEASE_2_2_0.md)
+## Current milestone: 2.3.0 / Crash-proof start-up and real human characters (see RELEASE_2_3_0.md)
 
-Not yet executed in a Godot runtime (none available in the authoring environment): run the editor import, `tests/run_tests.gd`, and the device checklist in RELEASE_2_2_0.md.
+Not yet executed in a Godot runtime (none available in the authoring environment): run the editor import, `tests/run_tests.gd`, and the device checklists in RELEASE_2_3_0.md and RELEASE_2_2_0.md.
 
 ### 2.0.0 content arc (still current)
 

@@ -51,6 +51,7 @@ const MIN_SPLASH_SECONDS := 1.6
 var _boot_started_msec := 0
 
 func _ready() -> void:
+    BootGuard.begin()
     _boot_started_msec = Time.get_ticks_msec()
     # The Android back button must never close the game under a child's thumb; the HUD handles it.
     get_tree().quit_on_go_back = false
@@ -63,28 +64,54 @@ func _ready() -> void:
     await get_tree().process_frame
     await get_tree().process_frame
     splash.set_progress(0.1)
+    BootGuard.stage("services")
     _create_services()
+    BootGuard.stage("save_restore")
     _restore_save()
     _detect_device_quality()
+    if BootGuard.safe_mode:
+        # The previous start-up never finished: come back gently on the lightest graphics tier.
+        settings.set_value("quality", "low")
     _apply_runtime_settings()
     splash.set_progress(0.2)
     await _choose_character_if_new()
     await get_tree().process_frame
+    _start_boot_watchdog()
     splash.set_progress(0.35)
+    BootGuard.stage("player")
     _create_player()
+    BootGuard.stage("atmosphere")
     _create_atmosphere()
     splash.set_progress(0.5)
     await get_tree().process_frame
+    BootGuard.stage("world_setup")
     _create_world()
+    if chunk_streamer != null:
+        # Procedural props only start once the village has registered its buildings, so a tree
+        # can never be planted where a house is about to stand.
+        chunk_streamer.set_process(false)
+    await get_tree().process_frame
+    BootGuard.stage("hud")
     _create_hud()
     _apply_runtime_settings()
     _connect_systems()
     splash.set_progress(0.65)
+    await get_tree().process_frame
     # Add the world only after its signals are connected, so its first discovery
     # and tutorial objective are not emitted into the void during _ready().
+    # The world builds itself over several frames (so a phone never stalls for seconds in one frame)
+    # and announces build_finished when everything, including NPCs and animals, is in place.
+    BootGuard.stage("world_build")
+    world.safe_mode = BootGuard.safe_mode
     add_child(world)
+    if not world.built:
+        await world.build_finished
+    if chunk_streamer != null:
+        chunk_streamer.set_process(true)
+    BootGuard.stage("world_restore")
     _restore_world_after_load()
     splash.set_progress(0.85)
+    BootGuard.stage("ground_wait")
     await _wait_for_ground()
     player.set_physics_process(true)
     adaptive = AdaptiveQuality.new()
@@ -99,8 +126,13 @@ func _ready() -> void:
     analytics.track("game_start", {"version": GameConfig.VERSION_NAME, "tier": str(settings.get_value("quality", "medium"))})
     audio.play_music("village")
     await _finish_splash()
+    BootGuard.finish()
+    if is_instance_valid(_watchdog):
+        _watchdog.stop()
     if not save_system.last_recovery_message.is_empty():
         hud.show_message(save_system.last_recovery_message)
+    elif BootGuard.failed_stage != "":
+        hud.show_message("The game restarted with lighter graphics to keep running smoothly")
     else:
         hud.show_message("Welcome to Alpha Crush — WORDS CHANGE THE WORLD")
 
@@ -121,8 +153,10 @@ func _choose_character_if_new() -> void:
     select.name = "CharacterSelect"
     select.audio = audio
     splash.visible = false
+    BootGuard.rest("character_select")
     add_child(select)
     var gender: String = await select.chosen
+    BootGuard.stage("character_chosen")
     settings.set_value("avatar_female", gender == "female")
     settings.set_value("character_chosen", true)
     splash.visible = true
@@ -136,6 +170,38 @@ func _wait_for_ground() -> void:
         if not space.intersect_ray(query).is_empty():
             return
         await get_tree().physics_frame
+
+var _watchdog: Timer
+var _watchdog_rounds := 0
+const WATCHDOG_SECONDS := 40.0
+
+## If start-up is still not finished after WATCHDOG_SECONDS the splash tells the player what to do instead
+## of sitting there silently; after a second period the game shows whatever it has built so far.
+func _start_boot_watchdog() -> void:
+    _watchdog = Timer.new()
+    _watchdog.name = "BootWatchdog"
+    _watchdog.one_shot = true
+    _watchdog.wait_time = WATCHDOG_SECONDS
+    _watchdog.process_mode = Node.PROCESS_MODE_ALWAYS
+    add_child(_watchdog)
+    _watchdog.timeout.connect(_on_boot_watchdog)
+    _watchdog.start()
+
+func _on_boot_watchdog() -> void:
+    if BootGuard.is_finished():
+        return
+    _watchdog_rounds += 1
+    BootGuard.log_line("WATCHDOG round %d: start-up not finished (progress stage is in boot_state.cfg)" % _watchdog_rounds)
+    if _watchdog_rounds == 1:
+        if is_instance_valid(splash):
+            splash.show_notice("Still loading... if the village does not appear, close the game and open it again. It will start with lighter graphics.")
+        _watchdog.start(WATCHDOG_SECONDS)
+        return
+    if player != null and is_instance_valid(player):
+        player.set_physics_process(true)
+    if is_instance_valid(splash):
+        splash.finish()
+        splash = null
 
 func _finish_splash() -> void:
     var elapsed := float(Time.get_ticks_msec() - _boot_started_msec) / 1000.0
@@ -301,6 +367,7 @@ func _create_player() -> void:
     player = preload("res://player/player.gd").new()
     player.name = "Player"
     player.settings = settings
+    player.body_type = "female" if bool(settings.get_value("avatar_female", false)) else "male"
     # Main sits at the origin, so local == global here. global_position cannot be written
     # before the node is inside the tree (the engine logs an error and the write is lost).
     player.position = Vector3(0, 1.2, 10)
