@@ -76,3 +76,16 @@ split into `--stage=mesh`, `--stage=decimate` and the final stage, with checkpoi
 version in seconds for design iteration. Lessons learned while building it (so they are not repeated): arms and legs must be modelled
 with a visible gap to the body (an A-pose), otherwise the mesher fuses them and any pose stretches a web between them; a garment that
 hangs from the torso must not take leg weights; seams between materials need explicit refinement or they zig-zag at triangle size.
+
+## 3.0 Battle Edition additions
+
+| Asset | Generator | Notes |
+|---|---|---|
+| HUD / menu icons (32: actions, guns, styles, crush moves, killstreaks) | `tools/assetgen/build_combat_icons.py` (Pillow) | White glyph + soft shadow, 192 px, same look as the older icons; drawn at 4x and downsampled |
+| Sound effects (37), music loops (menu, battle, boss), `war_rumble` ambience | `tools/assetgen/build_combat_audio.py` (numpy + scipy) | Noise bursts + pitch-swept sines + a small step sequencer; 22.05 kHz mono; deterministic seeds; loops wrap their tails so they are seamless |
+| `.import` sidecars for the above | `tools/assetgen/write_combat_imports.py` | Same settings as the older assets; Godot rewrites them on first import |
+| Guns, rockets, grenades, crates, barrels, containers, sandbags, barriers, ruins, flags, drones | built in code (`weapons/weapon_model.gd`, `world/battle_world.gd`, `world/props/`, `modes/`) from boxes, tubes and spheres | No imported art, so nothing can fail to load; world-space triplanar textures avoid stretching on long boxes |
+| Characters | the existing four skinned humans (boy, girl, man, woman) | Soldiers are the man/woman models re-coloured per faction; new poses are procedural bone overlays in `visuals/avatar_rig.gd` |
+
+Honest limits: the synthesised audio is functional and consistent, not studio-grade; the procedural guns are stylised silhouettes;
+the poses were tuned without seeing them on screen.

@@ -4,7 +4,7 @@ class_name SaveSystem
 const SAVE_PATH := "user://alpha_crush_save.json"
 const BACKUP_PATH := "user://alpha_crush_save.backup.json"
 const TEMP_PATH := "user://alpha_crush_save.tmp.json"
-const SAVE_VERSION := 13
+const SAVE_VERSION := 14
 
 signal saved
 signal loaded
@@ -16,34 +16,22 @@ var last_recovery_message := ""
 func _ready() -> void:
     load_game()
 
+## Keys that only the old word-adventure game used; they are dropped when an old save is migrated.
+const OBSOLETE_KEYS: Array[String] = [
+    "world_seed", "player", "progression", "achievements", "inventory", "inventory_capacity", "harvest_state", "world_state",
+    "discoveries", "map", "upgrades", "daily", "events", "world_clock", "weather", "opportunities", "campaign", "market_orders",
+    "postgame", "word_system", "word_progress"
+]
+
 func default_data() -> Dictionary:
     return {
         "version": SAVE_VERSION,
-        "world_seed": GameConfig.WORLD_SEED,
-        "player": {"position": [0.0, 1.2, 10.0], "customization": {"style": "default"}},
-        "progression": {"level": 1, "xp": 0},
-        "achievements": {"progress": {}, "claimed": {}},
-        "inventory": {"coins": GameConfig.STARTING_COINS, "gems": 0},
-        "inventory_capacity": GameConfig.MAX_INVENTORY_SLOTS,
-        "harvest_state": {},
+        "progress": PlayerProgress.default_state(),
         "consent": {"consent_collected": false, "personalized_ads": false},
         "purchases": {"entitlements": {}},
-        "world_state": {},
-        "discoveries": [],
-        "map": [],
-        "upgrades": {},
-        "daily": {},
-        "events": {},
-        "world_clock": {"elapsed": 0.0, "period": "morning"},
-        "weather": {"weather": "clear", "timer": 0.0},
-        "settings": {"quality": "medium", "music": true, "sfx": true, "vibration": true, "text_scale": 1.0, "high_contrast": false, "camera_sensitivity": 1.0},
-        "profile": {"display_name": "Explorer", "avatar_style": "default", "outfit": "field_jacket", "backpack": "starter_pack", "emotes": ["wave", "celebrate"]},
-        "opportunities": {},
-        "campaign": {"current_index": 0, "completed": {}, "finale_ready": false, "finale_done": false, "postgame_unlocked": false},
-        "market_orders": {"active_order": {}, "sequence": 0},
-        "postgame": {"completed": {}, "active_id": "", "cycle": 0},
-        "word_system": {"active_word": "", "collected": {}, "completed": {}, "history": []},
-        "word_progress": {},
+        "settings": {"quality": "medium", "music": true, "sfx": true, "vibration": true, "text_scale": 1.0, "high_contrast": false, "camera_sensitivity": 1.0,
+            "simple_mode": true, "aim_assist": 1.0, "bullet_time": true, "damage_numbers": true},
+        "profile": {"display_name": "Recruit"},
         "analytics": {"first_open": Time.get_unix_time_from_system()},
         "session": {"last_save": 0, "clean_shutdown": false}
     }
@@ -97,41 +85,19 @@ func migrate(old: Dictionary) -> Dictionary:
             else:
                 out[key] = fallback
     var version := int(old.get("version", 1))
-    if version < 2:
-        if not out.has("progression"): out["progression"] = {"level": 1, "xp": 0}
-    if version < 3:
-        if not out.has("discoveries"): out["discoveries"] = []
-        if not out.has("upgrades"): out["upgrades"] = {}
-    if version < 4:
-        if not out.has("map"): out["map"] = []
-        if not out.has("daily"): out["daily"] = {}
-    if version < 5:
-        if not out.has("events"): out["events"] = {}
-        if not out.has("settings"): out["settings"] = default_data()["settings"]
-    if version < 6:
-        if not out.has("session"): out["session"] = {"last_save": 0, "clean_shutdown": false}
-        if not out.has("profile"): out["profile"] = default_data()["profile"]
-        if not out.has("opportunities"): out["opportunities"] = {}
-    if version < 7:
-        if not out.has("world_clock"): out["world_clock"] = {"elapsed": 0.0, "period": "morning"}
-        if not out.has("weather"): out["weather"] = {"weather": "clear", "timer": 0.0}
-    if version < 8:
-        if not out.has("achievements"): out["achievements"] = {"progress": {}, "claimed": {}}
-    if version < 9:
-        if not out.has("inventory_capacity"):
-            out["inventory_capacity"] = GameConfig.MAX_INVENTORY_SLOTS
-    if version < 10:
-        if not out.has("harvest_state"):
-            out["harvest_state"] = {}
-    if version < 11:
-        if not out.has("campaign"):
-            out["campaign"] = default_data()["campaign"]
-    if version < 12:
-        if not out.has("market_orders"):
-            out["market_orders"] = default_data()["market_orders"]
-    if version < 13:
-        if not out.has("postgame"):
-            out["postgame"] = default_data()["postgame"]
+    if version < 14:
+        # 2.x word-adventure save: keep the coins as a welcome bonus (capped), start the combat career fresh, drop the old keys.
+        var carried := 0
+        var old_inventory: Variant = old.get("inventory", {})
+        if old_inventory is Dictionary:
+            carried = clampi(int(old_inventory.get("coins", 0)), 0, 1500)
+        var career: Dictionary = PlayerProgress.default_state()
+        career["coins"] = int(career["coins"]) + carried
+        out["progress"] = career
+        for key in OBSOLETE_KEYS:
+            out.erase(key)
+        if not out.has("profile") or typeof(out["profile"]) != TYPE_DICTIONARY:
+            out["profile"] = default_data()["profile"]
     out["version"] = SAVE_VERSION
     return out
 

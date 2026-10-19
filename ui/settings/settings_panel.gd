@@ -1,9 +1,9 @@
 extends PanelContainer
 class_name SettingsPanel
 
-## Two layers. The top layer is for the child: big picture switches for music, sounds, buzzing
-## and the hero (boy / girl). Everything else (graphics, left-handed layout, multiplayer, ads
-## privacy, store) sits behind the parental gate, because it can spend money or touch the network.
+## Two layers. The top layer is for the player: big picture switches for music, sounds, buzzing
+## and the hero (boy / girl). Everything else (graphics, controls, ads privacy, store) sits behind the
+## grown-up gate, because it can spend money or touch the network.
 signal message(text: String)
 signal close_requested
 signal parent_gate_requested
@@ -15,16 +15,14 @@ var settings: SettingsManager
 var consent: ConsentManager
 var ads: AdService
 var purchases: PurchaseService
-var multiplayer_session: MultiplayerSession
 var unlocked := false
 var _content: VBoxContainer
 
-func setup(local_settings: SettingsManager, local_consent: ConsentManager, local_ads: AdService, local_purchases: PurchaseService, local_session: MultiplayerSession) -> void:
+func setup(local_settings: SettingsManager, local_consent: ConsentManager, local_ads: AdService, local_purchases: PurchaseService) -> void:
     settings = local_settings
     consent = local_consent
     ads = local_ads
     purchases = local_purchases
-    multiplayer_session = local_session
     visible = false
     add_theme_stylebox_override("panel", KidUI.panel_style(KidUI.PANEL, 40, Color(1, 1, 1, 0.85), 5))
     var column := VBoxContainer.new()
@@ -201,15 +199,19 @@ func _build_parent_layer() -> void:
     _content.add_child(_check_row("Automatic graphics (lowers detail if the phone struggles)", "auto_quality", true))
     _content.add_child(_section("PLAY"))
     _content.add_child(_check_row("Left-handed layout (move stick on the left)", "left_handed", false))
+    _content.add_child(_check_row("Simple mode (the gun fires only at enemies you are facing)", "simple_mode", true))
+    _content.add_child(_slider_row("Aim assist", "aim_assist", 0.0, 1.0, 0.1, 1.0))
+    _content.add_child(_check_row("Bullet time after a perfect dodge", "bullet_time", true))
+    _content.add_child(_check_row("Damage numbers", "damage_numbers", true))
     _content.add_child(_check_row("Helpful arrows", "guide_arrows", true))
     _content.add_child(_check_row("High contrast", "high_contrast", false))
     _content.add_child(_slider_row("Text size", "text_scale", 0.8, 1.5, 0.1, 1.0))
     _content.add_child(_slider_row("Camera sensitivity", "camera_sensitivity", 0.5, 2.0, 0.1, 1.0))
-    _content.add_child(_text_button("Show the how-to-play hand again", func(): replay_tutorial_requested.emit()))
+    _content.add_child(_text_button("Show the how-to-play tips again", func(): replay_tutorial_requested.emit()))
     _content.add_child(_text_button("Save now", func(): save_requested.emit()))
     _content.add_child(_section("PRIVACY & ADS"))
     if GameConfig.CHILD_DIRECTED:
-        _content.add_child(_text("This game is made for children. Ads, if any, are never personalized."))
+        _content.add_child(_text("Ads, if any, are never personalized in this build."))
     else:
         var status := "not chosen" if consent == null or not consent.consent_collected else ("personalized" if consent.personalized_ads else "non-personalized")
         _content.add_child(_text("Ad privacy: %s" % status))
@@ -246,31 +248,3 @@ func _build_parent_layer() -> void:
         if ads:
             ads.show_rewarded("coins")
     ))
-    _content.add_child(_section("PLAY WITH FRIENDS ON THE SAME WI-FI"))
-    var address := LineEdit.new()
-    address.placeholder_text = "192.168.1.20"
-    address.text = "127.0.0.1"
-    address.custom_minimum_size = Vector2(0, 52)
-    _content.add_child(address)
-    var network_row := HBoxContainer.new()
-    network_row.add_theme_constant_override("separation", 10)
-    network_row.add_child(_text_button("Host", func():
-        if multiplayer_session and multiplayer_session.host():
-            message.emit("Hosting on UDP 24560. Friends join your Wi-Fi address.")
-        else:
-            message.emit("Could not host a session.")
-    ))
-    network_row.add_child(_text_button("Join", func():
-        if multiplayer_session and multiplayer_session.join(address.text.strip_edges()):
-            message.emit("Connecting to %s…" % address.text.strip_edges())
-        else:
-            message.emit("Could not start a connection.")
-    ))
-    network_row.add_child(_text_button("Leave", func():
-        if multiplayer_session:
-            multiplayer_session.leave()
-        message.emit("Left multiplayer session.")
-    ))
-    for child in network_row.get_children():
-        (child as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    _content.add_child(network_row)

@@ -44,6 +44,25 @@ var carry_amount := 0.0
 var _idle_time := 0.0
 var _reach_time := 0.0
 
+## Combat poses (gun stance, punches, kicks, hit reaction, slam, cheer). They blend on top of the walk / idle pose.
+const PUNCH_SECONDS := 0.28
+const KICK_SECONDS := 0.40
+const HIT_SECONDS := 0.32
+const SLAM_SECONDS := 0.70
+const CHEER_SECONDS := 1.60
+
+var aim_blend := 0.0
+var _aim_on := false
+var _punch_time := 0.0
+var _punch_right := true
+var _kick_time := 0.0
+var _hit_time := 0.0
+var _slam_time := 0.0
+var _cheer_time := 0.0
+var _flash := 0.0
+var _flash_color := Color(1, 1, 1, 1)
+var _flash_applied := -1.0
+
 # bone indices, -1 when the model lacks the bone
 var _i_hips := -1
 var _i_spine := -1
@@ -408,3 +427,122 @@ func animate(delta: float, planar_speed: float, on_floor: bool, _sprinting: bool
     if _tail >= 0:
         _rot(_tail, Vector3(0.05 * sin(_idle_time * 1.3) + 0.24 * amp * sin(phase * 2.0 + 0.6) - 0.10 * air,
             0.0, 0.10 * amp * sin(phase + 1.2) + 0.03 * sin(_idle_time * 0.9)))
+    _apply_combat_overlay(delta)
+
+# ---------------------------------------------------------------------------------------------- combat poses
+func set_aiming(value: bool) -> void:
+    _aim_on = value
+
+func play_punch(use_right: bool) -> void:
+    _punch_time = PUNCH_SECONDS
+    _punch_right = use_right
+
+func play_kick() -> void:
+    _kick_time = KICK_SECONDS
+
+func play_hit() -> void:
+    _hit_time = HIT_SECONDS
+
+func play_slam() -> void:
+    _slam_time = SLAM_SECONDS
+
+func play_cheer() -> void:
+    _cheer_time = CHEER_SECONDS
+
+## Brief colour wash on the body (white when hit, orange while a crush move charges). Fades by itself.
+func flash(amount: float, color: Color = Color(1, 1, 1, 1)) -> void:
+    _flash = clampf(amount, 0.0, 1.0)
+    _flash_color = color
+
+func is_busy() -> bool:
+    return _punch_time > 0.0 or _kick_time > 0.0 or _slam_time > 0.0
+
+## Slerps one bone from the pose the walk / idle code just wrote towards `euler`, `weight` of the way.
+func _blend_rot(bone: int, euler: Vector3, weight: float) -> void:
+    if bone < 0 or weight <= 0.001:
+        return
+    var current := skeleton.get_bone_pose_rotation(bone)
+    skeleton.set_bone_pose_rotation(bone, current.slerp(Quaternion.from_euler(euler), clampf(weight, 0.0, 1.0)))
+
+func _apply_combat_overlay(delta: float) -> void:
+    if skeleton == null:
+        return
+    aim_blend = lerpf(aim_blend, 1.0 if _aim_on else 0.0, minf(1.0, delta * 12.0))
+    _punch_time = maxf(0.0, _punch_time - delta)
+    _kick_time = maxf(0.0, _kick_time - delta)
+    _hit_time = maxf(0.0, _hit_time - delta)
+    _slam_time = maxf(0.0, _slam_time - delta)
+    _cheer_time = maxf(0.0, _cheer_time - delta)
+    _flash = maxf(0.0, _flash - delta * 4.0)
+    _apply_flash()
+    # Gun stance: both arms raised to hold the weapon in front of the chest.
+    if aim_blend > 0.01:
+        _blend_rot(_i_ua_r, Vector3(1.38, 0.0, -0.06), aim_blend)
+        _blend_rot(_i_fa_r, Vector3(0.32, 0.0, 0.0), aim_blend)
+        _blend_rot(_i_ua_l, Vector3(1.22, 0.0, 0.42), aim_blend)
+        _blend_rot(_i_fa_l, Vector3(0.95, 0.0, 0.0), aim_blend)
+    # Kung-fu punch: the striking arm snaps forward while the torso twists into it and the other hand guards.
+    if _punch_time > 0.0:
+        var strike := sin(clampf(1.0 - _punch_time / PUNCH_SECONDS, 0.0, 1.0) * PI)
+        var side := 1.0 if _punch_right else -1.0
+        if _punch_right:
+            _blend_rot(_i_ua_r, Vector3(1.50, 0.0, -0.05), strike)
+            _blend_rot(_i_fa_r, Vector3(0.10, 0.0, 0.0), strike)
+            _blend_rot(_i_ua_l, Vector3(0.90, 0.0, 0.50), strike * 0.8)
+            _blend_rot(_i_fa_l, Vector3(1.60, 0.0, 0.0), strike * 0.8)
+        else:
+            _blend_rot(_i_ua_l, Vector3(1.50, 0.0, 0.05), strike)
+            _blend_rot(_i_fa_l, Vector3(0.10, 0.0, 0.0), strike)
+            _blend_rot(_i_ua_r, Vector3(0.90, 0.0, -0.50), strike * 0.8)
+            _blend_rot(_i_fa_r, Vector3(1.60, 0.0, 0.0), strike * 0.8)
+        _blend_rot(_i_spine, Vector3(-0.12, 0.45 * side, 0.0), strike)
+        _blend_rot(_i_hips, Vector3(0.0, 0.25 * side, 0.0), strike * 0.6)
+    # Kick: the right leg whips up in front, arms spread for balance, torso leans back.
+    if _kick_time > 0.0:
+        var lift := sin(clampf(1.0 - _kick_time / KICK_SECONDS, 0.0, 1.0) * PI)
+        _blend_rot(_i_th_r, Vector3(1.45, 0.0, 0.0), lift)
+        _blend_rot(_i_sh_r, Vector3(-0.12, 0.0, 0.0), lift)
+        _blend_rot(_i_ft_r, Vector3(0.40, 0.0, 0.0), lift)
+        _blend_rot(_i_spine, Vector3(0.28, 0.0, 0.0), lift)
+        _blend_rot(_i_ua_r, Vector3(0.30, 0.0, 0.90), lift)
+        _blend_rot(_i_ua_l, Vector3(0.30, 0.0, -0.90), lift)
+    # Hit reaction: a quick snap backwards that decays.
+    if _hit_time > 0.0:
+        var snap := clampf(_hit_time / HIT_SECONDS, 0.0, 1.0)
+        _blend_rot(_i_spine, Vector3(0.38, 0.0, 0.0), snap)
+        _blend_rot(_i_head, Vector3(0.30, 0.0, 0.0), snap)
+        _blend_rot(_i_ua_r, Vector3(0.50, 0.0, 0.50), snap * 0.8)
+        _blend_rot(_i_ua_l, Vector3(0.50, 0.0, -0.50), snap * 0.8)
+    # Ground slam (the QUAKE crush): arms overhead, then smashed down with the torso bending forward.
+    if _slam_time > 0.0:
+        var progress := clampf(1.0 - _slam_time / SLAM_SECONDS, 0.0, 1.0)
+        var raise := smoothstep(0.0, 0.45, progress) * (1.0 - smoothstep(0.50, 0.62, progress))
+        var smash := smoothstep(0.50, 0.62, progress) * (1.0 - smoothstep(0.85, 1.0, progress))
+        _blend_rot(_i_ua_r, Vector3(2.90, 0.0, -0.15), raise)
+        _blend_rot(_i_ua_l, Vector3(2.90, 0.0, 0.15), raise)
+        _blend_rot(_i_fa_r, Vector3(0.30, 0.0, 0.0), raise)
+        _blend_rot(_i_fa_l, Vector3(0.30, 0.0, 0.0), raise)
+        _blend_rot(_i_ua_r, Vector3(0.50, 0.0, -0.10), smash)
+        _blend_rot(_i_ua_l, Vector3(0.50, 0.0, 0.10), smash)
+        _blend_rot(_i_spine, Vector3(-0.55, 0.0, 0.0), smash)
+    # Victory cheer: both arms pumping overhead.
+    if _cheer_time > 0.0:
+        var pump := 0.5 + 0.5 * sin(_idle_time * 14.0)
+        var fade := clampf(_cheer_time / CHEER_SECONDS, 0.0, 1.0)
+        _blend_rot(_i_ua_r, Vector3(2.6 + 0.3 * pump, 0.0, -0.35), fade)
+        _blend_rot(_i_ua_l, Vector3(2.6 + 0.3 * (1.0 - pump), 0.0, 0.35), fade)
+        _blend_rot(_i_fa_r, Vector3(0.4, 0.0, 0.0), fade)
+        _blend_rot(_i_fa_l, Vector3(0.4, 0.0, 0.0), fade)
+
+func _apply_flash() -> void:
+    if is_equal_approx(_flash, _flash_applied):
+        return
+    _flash_applied = _flash
+    for id in ["avatar_shirt", "avatar_pants", "avatar_skin_body", "avatar_skin_head"]:
+        var material := _materials.get(id) as StandardMaterial3D
+        if material == null:
+            continue
+        material.emission_enabled = _flash > 0.01
+        if _flash > 0.01:
+            material.emission = _flash_color
+            material.emission_energy_multiplier = _flash * 1.4

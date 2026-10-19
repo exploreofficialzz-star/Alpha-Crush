@@ -1,38 +1,14 @@
 extends RefCounted
 class_name TestTouchControls
 
-## Move-stick maths and the guide director's picture-friendly target choice.
+## Move-stick maths (dead zone, full tilt, diagonals) and the touch router's priority order.
 static func run() -> bool:
-    if AlphaCrushVirtualJoystick.remap_stick(Vector2(0.05, 0.0), 0.14) != Vector2.ZERO:
-        return false
+    var ok := true
+    ok = TestSupport.expect(AlphaCrushVirtualJoystick.remap_stick(Vector2(0.05, 0.0), 0.14) == Vector2.ZERO, "inside the dead zone nothing moves") and ok
     var full := AlphaCrushVirtualJoystick.remap_stick(Vector2(1.0, 0.0), 0.14)
-    if not full.is_equal_approx(Vector2(1.0, 0.0)):
-        return false
+    ok = TestSupport.expect(full.is_equal_approx(Vector2(1.0, 0.0)), "full tilt is full speed") and ok
     var half := AlphaCrushVirtualJoystick.remap_stick(Vector2(0.57, 0.0), 0.14)
-    if absf(half.x - 0.5) > 0.001:
-        return false
-    # Direction is preserved on diagonals and the magnitude never exceeds 1.
+    ok = TestSupport.expect(absf(half.x - 0.5) < 0.001, "the dead zone is remapped smoothly") and ok
     var diagonal := AlphaCrushVirtualJoystick.remap_stick(Vector2(2.0, 2.0), 0.14)
-    if diagonal.length() > 1.0001 or absf(diagonal.x - diagonal.y) > 0.0001:
-        return false
-    var director := GuideDirector.new()
-    var inventory: Inventory = preload("res://gameplay/inventory.gd").new()
-    var sites: OpportunityManager = preload("res://gameplay/opportunities/opportunity_manager.gd").new()
-    director.setup(null, null, inventory, sites)
-    var passed := true
-    if director.carries_sellables():
-        passed = false
-    inventory.add_item("fruit_orange", 2)
-    if not director.carries_sellables():
-        passed = false
-    sites.register("far", "Far Ladder", "LADDER", Vector3(40, 0, 0))
-    sites.register("near", "Near Basket", "BASKET", Vector3(5, 0, 0))
-    var target := director.nearest_site(Vector3.ZERO)
-    if str(target.get("icon", "")) != "basket" or str(target.get("kind", "")) != "site":
-        passed = false
-    sites.complete("near")
-    if str(director.nearest_site(Vector3.ZERO).get("icon", "")) != "ladder":
-        passed = false
-    inventory.free()
-    sites.free()
-    return passed
+    ok = TestSupport.expect(diagonal.length() <= 1.0001 and absf(diagonal.x - diagonal.y) < 0.0001, "diagonals keep their direction and never exceed 1") and ok
+    return ok

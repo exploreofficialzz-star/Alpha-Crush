@@ -1,53 +1,51 @@
-# Alpha Crush — Godot 4.x Production Build
+# Alpha Crush — Battle Edition (Godot 4.7, Android-first)
 
-**Core identity: WORDS CHANGE THE WORLD.**
+**Crush the opposition.** A stylised third-person action shooter for phones where **one button is both a gun and a kung-fu chain**:
+up close it punches and kicks, at range it fires at the enemy you are facing. Fill the CRUSH meter, roll through bullets for bullet
+time, call in killstreaks, and fight your way from operation ALPHA to ZULU.
 
-This is an actively constructed Godot project following `ALPHA_CRUSH_MASTER_GODOT_BUILD_PROMPT.txt` as the source of truth.
+* 4 modes: Team Crush, Last Stand (waves), Domination (flags), Commander Hunt (boss)
+* 26 campaign operations on 8 seeded maps, plus Quick Battle
+* 7 guns with upgrades, 4 fighting styles, 3 crush moves, 3 killstreaks, outfits, rank 1-40
+* Squad-mates, 8 enemy types in 4 opposition sides, fair-fight attack tokens, telegraphed specials
+* No blood: defeated fighters are knocked out in a puff of stars
+* Low-end-phone friendly: GL Compatibility renderer, pooled effects, automatic quality tiers, crash-loop safe mode
 
-## Current architecture
+Start with **`GAME_DESIGN.md`** (design + every stat table) and **`RELEASE_3_0_0.md`** (what changed, what is verified and what is
+not, first-run checklist, store/age-rating decision).
 
-- `core/` — bootstrap, configuration, services, save system
-- `player/` — human third-person controller
-- `world/` — world state, deterministic chunk streaming, regions, weather
-- `words/` — word database, physical letters, assembly
-- `gameplay/` — discovery, harvesting, crafting, marketplace, progression
-- `economy/` — currencies and purchase boundaries
-- `multiplayer/` — ENet networking and world-authority boundary
-- `ads/` — AdMob integration boundary + consent
-- `analytics/` — event collection boundary
-- `mobile/` — scalable quality levels
-- `ui/` — mobile HUD, contextual actions, inventory/map/daily/workshop/settings panels
-- `assets/` — generated original SVG UI/letter/character reference assets and procedural 3D construction
-- `audio/` — generated original SFX and looping music
-- `data/` — deterministic content definitions
-- `tests/` — source-ready unit/integration test coverage
+## Layout
 
-## Playable progression currently wired
+| Folder | Contents |
+|---|---|
+| `core/` | `main.gd` application root, boot guard, device profile, save system, configuration |
+| `combat/` `weapons/` `fighters/` | the battle engine: teams, damage, aim assist, attack tokens, guns, player controller, enemy AI |
+| `modes/` | match rules for the four modes, the A-Z operation catalog, flags, pickups, killstreaks |
+| `world/` | battlefield builder, arena catalog, terrain, breakable props |
+| `progression/` | `PlayerProgress` (rank, coins, loadout, stars) |
+| `ui/` | battle HUD (`ui/battle`), menus (`ui/menus`), touch controls (`ui/mobile`), settings, theme |
+| `vfx/` `audio/` `visuals/` | pooled combat effects, sound, avatar rig / materials / sky |
+| `ads/` `economy/` `analytics/` `security/` | consent-aware ads, parent-gated purchases, analytics boundary |
+| `tests/` `tools/` | unit suites, Python audits, static GDScript lint, procedural asset generators |
+| `legacy/word_adventure/` | the archived 2.x word game (ignored by Godot) |
 
-HOME → EXPLORE → ELEVATED GARDEN → LADDER → ORANGE → HARVEST → BASKET → MARKET → SELL → UPGRADE → NEXT DISCOVERY.
+## Working with the project
 
-Additional discoverable situations are playable in the starter world: a blocked river path (BRIDGE), broken footbridge (REPAIR), empty field (SEEDS), broken workshop (TOOLS), dark cave (LANTERN), damaged boat (ENGINE), locked storage (KEY), closed market (OPEN), closed dock (BOAT), old meadow gate (GATE), and dark beacon (LIGHT). Per-word progress is retained when the player investigates another situation, and the garden interaction resumes the next unfinished garden stage. Outside the hand-authored starter village, deterministic streamed region chunks generate heightfield terrain, collision, and region-specific props.
+```bash
+godot --headless --path . --import                         # first run on a fresh clone
+godot --headless --path . --script res://tests/run_tests.gd   # 26 unit/integration suites
+python3 tests/source_audit.py                              # source + asset audit
+python3 tools/gdlint/run_all.py                            # project's static GDScript checks
+python3 tools/assetgen/build_combat_audio.py               # regenerate combat sound + music
+python3 tools/assetgen/build_combat_icons.py               # regenerate combat icons
+python3 tools/assetgen/write_combat_imports.py             # .import sidecars for the generated assets
+```
 
-## Verification boundary
+Desktop keys for testing: WASD move, F attack, Space jump, Shift dodge, R reload, Q swap, G grenade, C crush, 1-3 streaks,
+right-mouse-drag to look, Esc to pause.
 
-The current environment has no Godot editor/runtime or Android SDK. Therefore this repository does **not** claim successful engine compilation, Android export, physical-device profiling, Play App Signing, live AdMob/IAP, or backend multiplayer validation. Those require the corresponding toolchain and credentials.
+## Honest status
 
-
-The repository also includes canonical monetization configuration, explicit ad-consent persistence, store/restore controls, reward verification boundaries, original procedural music loops, persistent player profile/customization data, a multi-opportunity registry, a Settings & Accessibility panel, LAN multiplayer host/join/leave controls, and persisted inventory capacity and resource refresh state.
-
-## 2.1.0 — Realism pass
-The world, human avatar, animals, sky and soundscape were rebuilt on a procedural PBR art pipeline.
-See `ASSET_PIPELINE.md` (what is generated, how to regenerate, honest limits) and `docs/previews/` (offline renders).
-First run on a fresh clone: `godot --headless --path . --import`, then open the project.
-
-## 2.3.0 — Crash-proof start-up and real human characters
-Crash-loop guard with safe mode and a boot log (`user://boot_log.txt`), staged world build, portrait-based character
-select, hero built once, no custom avatar shader; four new skinned characters (boy, girl, man, woman) with real faces,
-hair, clothes and hands. See `RELEASE_2_3_0.md` (what changed, what is unverified, device checklist).
-
-## 2.2.0 — Kid-friendly, low-end-ready release
-Picture-first HUD (right-thumb floating stick, big context-aware action button, goal bubble made of
-pictures, guide arrows, wordless tutorial), boy/girl hero choice, larger hero and closer camera, game
-icon + splash replacing the Godot logo, automatic graphics tiers with a frame-rate governor, VRAM-compressed
-textures, parental gate for settings that can spend money or touch the network, Android API 36 /
-32-bit ARM export fixes. Full notes, audit findings and the device test checklist: `RELEASE_2_2_0.md`.
+The project was written and statically checked without a Godot runtime. It has **not been launched yet**; see the verification
+section of `RELEASE_3_0_0.md` before trusting any behaviour, and run the first-run checklist there. `ASSET_PIPELINE.md` describes how
+the procedural art and audio are produced and their limits.

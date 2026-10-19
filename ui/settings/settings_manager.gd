@@ -16,7 +16,11 @@ var settings := {
     "left_handed": false,
     "guide_arrows": true,
     "character_chosen": false,
-    "tutorial_done": false
+    "tutorial_done": false,
+    "simple_mode": true,
+    "aim_assist": 1.0,
+    "bullet_time": true,
+    "damage_numbers": true
 }
 
 func set_value(key: String, value: Variant) -> void:

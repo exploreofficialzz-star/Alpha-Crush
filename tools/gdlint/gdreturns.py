@@ -83,7 +83,7 @@ def block_returns(stmts):
     return False
 
 problems=0
-for p in sorted(glob.glob('**/*.gd', recursive=True)):
+for p in sorted([x for x in glob.glob('**/*.gd', recursive=True) if not x.startswith('legacy')]):
     ll=logical_lines(p)
     i=0
     while i < len(ll):

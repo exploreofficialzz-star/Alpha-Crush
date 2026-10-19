@@ -82,10 +82,17 @@ for missing in sorted(r for r in referenced if r not in models and not r.endswit
     errors.append(f'scripts reference model "{missing}" but assets/models/{missing}.glb does not exist')
 
 # ---------------------------------------------------------------- audio
-for rel in ('ambience/day_wind_birds.wav', 'ambience/night_crickets.wav', 'ambience/river.wav', 'ambience/rain.wav',
-            'sfx/footstep_grass_0.wav', 'sfx/footstep_grass_1.wav', 'sfx/footstep_grass_2.wav'):
-    if not (ROOT / 'audio' / rel).exists():
-        errors.append(f'audio/{rel} is missing (run tools/assetgen/build_audio.py)')
+manager = (ROOT / 'audio' / 'audio_manager.gd').read_text()
+sfx_block = re.search(r'const SFX_IDS: Array\[String\] = \[(.*?)\]', manager, re.S)
+if not sfx_block:
+    errors.append('audio/audio_manager.gd: could not find SFX_IDS')
+else:
+    for sound in re.findall(r'"([a-z0-9_]+)"', sfx_block.group(1)):
+        if not (ROOT / 'audio' / 'sfx' / f'{sound}.wav').exists():
+            errors.append(f'audio/sfx/{sound}.wav is missing (run tools/assetgen/build_combat_audio.py)')
+for rel in re.findall(r'"res://(audio/(?:music|ambience)/[a-z0-9_]+\.wav)"', manager):
+    if not (ROOT / rel).exists():
+        errors.append(f'{rel} is missing (run tools/assetgen/build_combat_audio.py)')
 
 # ---------------------------------------------------------------- textures & shaders
 tex = ROOT / 'assets' / 'textures'

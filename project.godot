@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Alpha Crush"
+config/description="Crush the opposition: a stylised third-person action shooter that fuses gun play and kung-fu on one thumb."
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.0392157, 0.0705882, 0.188235, 1)
@@ -18,7 +19,7 @@ boot_splash/image="res://assets/branding/boot_splash.png"
 boot_splash/fullsize=true
 boot_splash/use_filter=true
 config/icon="res://icon.png"
-config/version="2.3.0"
+config/version="3.0.0"
 
 [display]
 
@@ -48,3 +49,11 @@ textures/default_filters/anisotropic_filtering_level=1
 anti_aliasing/quality/msaa_3d=0
 lights_and_shadows/directional_shadow/size=2048
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=1
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="alpha"
+3d_physics/layer_3="opposition"
+3d_physics/layer_4="breakable"
+3d_physics/layer_5="pickup"

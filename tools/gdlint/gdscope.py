@@ -21,7 +21,7 @@ def depth_delta(s):
     s2=re.sub(r'"(?:\\.|[^"\\])*"','""',s); s2=re.sub(r"'(?:\\.|[^'\\])*'","''",s2)
     return sum(s2.count(c) for c in '([{') - sum(s2.count(c) for c in ')]}')
 errs=0
-for p in sorted(glob.glob('**/*.gd', recursive=True)):
+for p in sorted([x for x in glob.glob('**/*.gd', recursive=True) if not x.startswith('legacy')]):
     lines=open(p).read().split('\n')
     stack=[]   # list of [indent, {name: line}]
     pending={} # indent -> list of (name,line) to add to scope at that indent

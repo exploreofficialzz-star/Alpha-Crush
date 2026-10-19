@@ -4,7 +4,7 @@ import json, re, wave, xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 errors = []
 class_names = {}
-for path in ROOT.rglob('*.gd'):
+for path in [p for p in ROOT.rglob('*.gd') if 'legacy' not in p.relative_to(ROOT).parts]:
     text = path.read_text(errors='ignore')
     for match in re.finditer(r'(?:preload|load)\("(res://[^\"]+)"\)', text):
         target = ROOT / match.group(1)[6:]
@@ -181,7 +181,7 @@ for relative in ('ui/mobile/touch_button.gd', 'ui/mobile/virtual_joystick.gd', '
         errors.append(f'{relative}: on-screen controls must be driven by TouchRouter; Godot GUI input drops the second finger')
 icon_dir = ROOT / 'assets' / 'ui' / 'icons'
 icon_literals = re.compile(r'(?:KidUI\.icon|icon_rect|_round_button|_make_button|set_icon|set_corner_icon)\(\s*"([a-z_0-9]+)"')
-for path in ROOT.rglob('*.gd'):
+for path in [p for p in ROOT.rglob('*.gd') if 'legacy' not in p.relative_to(ROOT).parts]:
     if 'tests' in path.parts:
         continue
     source = path.read_text(errors='ignore')
